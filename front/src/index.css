@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Theme tokens ───────────────────────────────────────── */
+:root {
+  --bg-app:      #0b0f1a;
+  --bg-surface:  #0f172a;
+  --bg-hover:    rgba(255, 255, 255, 0.08);
+  --bg-active:   rgba(255, 255, 255, 0.14);
+  --border:      rgba(255, 255, 255, 0.10);
+  --text-primary:   #f1f5f9;
+  --text-muted:     rgba(255, 255, 255, 0.55);
+  --accent:      #3b82f6;
+}
+
+[data-theme="light"] {
+  --bg-app:      #f1f5f9;
+  --bg-surface:  #ffffff;
+  --bg-hover:    rgba(0, 0, 0, 0.05);
+  --bg-active:   rgba(0, 0, 0, 0.10);
+  --border:      rgba(0, 0, 0, 0.10);
+  --text-primary:   #0f172a;
+  --text-muted:     rgba(0, 0, 0, 0.50);
+  --accent:      #2563eb;
+}
+
+/* ── Base ───────────────────────────────────────────────── */
+html, body, #root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  transition: background 0.2s, color 0.2s;
+}

@@ -1,0 +1,69 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "demandes": "Demandes",
+    "expeditions": "Expéditions",
+    "clients": "Clients",
+    "facturation": "Facturation"
+  },
+  "kpi": {
+    "demandes": "Demandes",
+    "economies_clients": "Économies clients",
+    "marge_brute": "Marge brute",
+    "expeditions": "Expéditions"
+  },
+  "dashboard": {
+    "charts_soon": "Graphiques à venir…"
+  },
+  "navbar": {
+    "toggle_light": "Passer en clair",
+    "toggle_dark": "Passer en sombre"
+  },
+  "demandes": {
+    "date": "Date de chargement",
+    "delivery_date": "Date de livraison",
+    "search": "Rechercher…",
+    "all_statuses": "Tous les statuts",
+    "new_request": "Nouvelle demande",
+    "client": "Client",
+    "origin": "Origine",
+    "searchClient":"Recherche ou saisir un client...",
+    "destination": "Destination",
+    "weight": "Poids",
+    "errors": {
+      "invalid_delivery_date": "La date de livraison ne peut pas être antérieure à la date de chargement."
+    },
+    "status": {
+      "pending": "En attente",
+      "approved": "Approuvée",
+      "in_progress": "En cours",
+      "delivered": "Livrée",
+      "cancelled": "Annulée"
+    },
+    "adresse": {
+      "street": "Rue",
+      "number": "N°",
+      "box": "Bte",
+      "zip": "Code Postal",
+      "zip_placeholder": "Ex: 1000",
+      "foreign_country_required": "Pays étranger requis",
+      "select_country": "Sélectionnez un pays",
+      "saved_addresses": "Adresses enregistrées"
+    },
+  
+    "countries": {
+      "france": "France",
+      "netherlands": "Pays-Bas",
+      "germany": "Allemagne",
+      "luxembourg": "Luxembourg",
+      "united_kingdom": "Royaume-Uni",
+      "italy": "Italie",
+      "spain": "Espagne",
+      "other": "Autre pays..."
+    }
+  },
+    "common": {
+      "cancel": "Annuler",
+      "create": "Créer"
+    }
+}

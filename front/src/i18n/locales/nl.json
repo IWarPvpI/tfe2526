@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "demandes": "Aanvragen",
+    "expeditions": "Zendingen",
+    "clients": "Klanten",
+    "facturation": "Facturatie"
+  },
+  "kpi": {
+    "demandes": "Aanvragen",
+    "economies_clients": "Klantbesparingen",
+    "marge_brute": "Brutomarge",
+    "expeditions": "Zendingen"
+  },
+  "dashboard": {
+    "charts_soon": "Grafieken binnenkort beschikbaar…"
+  },
+  "navbar": {
+    "toggle_light": "Lichte modus inschakelen",
+    "toggle_dark": "Donkere modus inschakelen"
+  },
+  "countries": {
+    "france": "Frankrijk",
+    "netherlands": "Nederland",
+    "germany": "Duitsland",
+    "luxembourg": "Luxemburg",
+    "united_kingdom": "Verenigd Koninkrijk",
+    "italy": "Italië",
+    "spain": "Spanje",
+    "other": "Ander land..."
+  },
+  "demandes": {
+    "search": "Zoeken…",
+    "all_statuses": "Alle statussen",
+    "new_request": "Nieuwe aanvraag",
+    "client": "Klant",
+    "origin": "Oorsprong",
+    "searchClient": "Klant zoeken of invoeren...",
+    "destination": "Bestemming",
+    "date": "Laaddatum",
+    "delivery_date": "Leveringsdatum",
+    "weight": "Totale gewicht",
+    "errors": {
+      "invalid_delivery_date": "De leveringsdatum kan niet vóór de laaddatum liggen."
+    },
+    "adresse": {
+      "street": "Straat",
+      "number": "Nr",
+      "box": "Bus",
+      "zip": "Postcode",
+      "zip_placeholder": "Bijv: 1000",
+      "foreign_country_required": "Buitenlands land vereist",
+      "select_country": "Selecteer een land",
+      "saved_addresses": "Opgeslagen adressen"
+    },
+    "status": {
+      "pending": "In afwachting",
+      "approved": "Goedgekeurd",
+      "in_progress": "In behandeling",
+      "delivered": "Geleverd",
+      "cancelled": "Geannuleerd"
+    }
+  },
+  "common": {
+    "cancel": "Annuleren",
+    "create": "Aanmaken"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "demandes": "Requests",
+    "expeditions": "Shipments",
+    "clients": "Clients",
+    "facturation": "Billing"
+  },
+  "kpi": {
+    "demandes": "Requests",
+    "economies_clients": "Client savings",
+    "marge_brute": "Gross margin",
+    "expeditions": "Shipments"
+  },
+  "dashboard": {
+    "charts_soon": "Charts coming soon…"
+  },
+  "navbar": {
+    "toggle_light": "Switch to light mode",
+    "toggle_dark": "Switch to dark mode"
+  },
+  "demandes": {
+    "search": "Search…",
+    "all_statuses": "All statuses",
+    "new_request": "New request",
+    "client": "Client",
+    "origin": "Origin",
+    "searchClient": "Search or enter a client...",
+    "destination": "Destination",
+    "date": "Loading date",
+    "delivery_date": "Delivery date",
+    "weight": "Total weight",
+    "errors": {
+      "invalid_delivery_date": "The delivery date cannot be earlier than the loading date."
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "in_progress": "In progress",
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
+    },
+    "adresse": {
+      "street": "Street",
+      "number": "N°",
+      "box": "Box",
+      "zip": "Postal Code",
+      "zip_placeholder": "E.g., 1000",
+      "foreign_country_required": "Foreign country required",
+      "select_country": "Select a country",
+      "saved_addresses": "Saved addresses"
+    },
+    "countries": {
+      "france": "France",
+      "netherlands": "Netherlands",
+      "germany": "Germany",
+      "luxembourg": "Luxembourg",
+      "united_kingdom": "United Kingdom",
+      "italy": "Italy",
+      "spain": "Spain",
+      "other": "Other country..."
+    }   
+  },
+   "common": {
+      "cancel": "Cancel",
+      "create": "Create"
+    }
+}

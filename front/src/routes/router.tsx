@@ -1,0 +1,97 @@
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ProtectedRoute from "../components/auth/ProtectedRoute";
+import Layout from "../components/layout/Layout";
+
+import Dashboard    from "../pages/Dashboard";
+import Demandes     from "../pages/Demande";
+import Expeditions  from "../pages/Expedition";
+import Facturation  from "../pages/Facturation";
+import Clients      from "../pages/Client";
+import Settings     from "../pages/Settings";
+import Login        from "../pages/Login";
+import Unauthorized from "../pages/Unauthorized";
+
+export default function Router() {
+  return (
+    <BrowserRouter>
+      <Routes>
+
+        {/* Public */}
+        <Route path="/login"        element={<Login />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+
+        {/* Protégé — toutes les pages partagent le même Layout */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute minRole="client">
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          {/* Accessible à tous les rôles connectés */}
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+
+          {/* Client + tous les rôles supérieurs */}
+          <Route path="expeditions" element={<Expeditions />} />
+          <Route path="facturation" element={<Facturation />} />
+
+          {/* Client uniquement (ses settings / adresses) */}
+          <Route
+            path="settings"
+            element={
+              <ProtectedRoute minRole="client">
+                <Settings />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Employé minimum */}
+          <Route
+            path="demandes"
+            element={
+              <ProtectedRoute minRole="client">
+                <Demandes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="clients"
+            element={
+              <ProtectedRoute minRole="employee">
+                <Clients />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Admin minimum */}
+          <Route
+            path="admin/*"
+            element={
+              <ProtectedRoute minRole="admin">
+                {/* Sous-routes admin à ajouter ici */}
+                <div>Admin panel</div>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* SuperAdmin uniquement */}
+          <Route
+            path="superadmin/*"
+            element={
+              <ProtectedRoute minRole="superadmin">
+                {/* Sous-routes superadmin à ajouter ici */}
+                <div>SuperAdmin panel</div>
+              </ProtectedRoute>
+            }
+          />
+        </Route>
+
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+
+      </Routes>
+    </BrowserRouter>
+  );
+}
