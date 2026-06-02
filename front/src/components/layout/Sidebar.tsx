@@ -1,5 +1,5 @@
 export default function Sidebar({ active, setActive }: any) {
-  const items = ["Dashboard", "Clients", "Expéditions", "Facturation"];
+  const items = ["Dashboard", "Clients", "Expéditions", "Facturation","TestPage"];
 
   return (
     <aside className="w-64 bg-[#0f172a] border-r border-white/10">

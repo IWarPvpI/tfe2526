@@ -1,0 +1,232 @@
+Tu est un expert fullstack Ts voici le projet qu'on ta demander de realisé
+Voici les task a executé, fait un verification coté backend et frontend pour que le projet focntionne correctement
+a chaque task cloturé rajoute done en bout dans la liste, cela signifie que tu n'aurai plus a gere ce point.
+chaque route dans la backend s'accompagne d'un swagger n'oublie pas les anotation swagger et un exemple pour qu'il puisse etre tester
+chaque task doit etre save dans la db si tu a besoin de crée un table fait le directement depuis nest.js puis fait le manuelleent dans la db au besoin
+
+
+pour la db voici le schema mermaid
+```mermaid
+erDiagram
+
+  users {
+    uuid id PK
+    uuid enterprise_id FK
+    uuid role_id FK
+    string email
+    string password_hash
+    string first_name
+    string last_name
+    string phone
+    boolean is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  roles {
+    uuid id PK
+    string name
+  }
+
+  enterprises {
+    uuid id PK
+    string name
+    string vat_number
+    string peppol_id
+    jsonb contract
+    jsonb negotiated_rates
+    timestamp created_at
+  }
+
+  addresses {
+    uuid id PK
+    uuid user_id FK
+    string label
+    string contact_first_name
+    string contact_last_name
+    string street
+    string number
+    string box
+    string zip_code
+    string city
+    string country_code
+    boolean is_default
+    timestamp created_at
+  }
+
+  contacts {
+    uuid id PK
+    uuid enterprise_id FK
+    string first_name
+    string last_name
+    string email
+    string phone
+    string role_in_company
+  }
+
+  requests {
+    uuid id PK
+    uuid client_id FK
+    uuid created_by_id FK
+    uuid origin_address_id FK
+    uuid destination_address_id FK
+    date pickup_date
+    date delivery_date
+    float weight_kg
+    enum status
+    jsonb selected_option
+    string fedex_tracking_number
+    string label_url
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  request_status_history {
+    uuid id PK
+    uuid request_id FK
+    enum status
+    string note
+    timestamp changed_at
+  }
+
+  invoices {
+    uuid id PK
+    uuid request_id FK
+    uuid user_id FK
+    string invoice_number
+    enum type
+    float amount_excl_vat
+    float vat_rate
+    float amount_incl_vat
+    string currency
+    string pdf_url
+    string peppol_document_id
+    enum payment_status
+    timestamp issued_at
+    timestamp paid_at
+  }
+
+  payments {
+    uuid id PK
+    uuid invoice_id FK
+    string provider
+    string provider_payment_id
+    float amount
+    enum status
+    timestamp created_at
+  }
+
+  audit_logs {
+    uuid id PK
+    uuid user_id FK
+    string action
+    string entity
+    uuid entity_id
+    jsonb before
+    jsonb after
+    string ip_address
+    timestamp created_at
+  }
+
+  notifications {
+    uuid id PK
+    uuid user_id FK
+    string channel
+    string subject
+    string body
+    boolean is_read
+    timestamp sent_at
+  }
+
+  roles ||--o{ users : "a"
+  enterprises ||--o{ users : "appartient à"
+  enterprises ||--o{ contacts : "possède"
+  users ||--o{ addresses : "possède"
+  users ||--o{ requests : "client"
+  users ||--o{ requests : "créé par"
+  addresses ||--o{ requests : "origine"
+  addresses ||--o{ requests : "destination"
+  requests ||--o{ request_status_history : "historique"
+  requests ||--o| invoices : "facturée"
+  invoices ||--o{ payments : "réglée par"
+  users ||--o{ audit_logs : "génère"
+  users ||--o{ notifications : "reçoit"
+
+
+```
+
+
+
+#Architerure Back
+supprime les fichier non utililsé
+strucutre des folder par domaine, controller service module etc doit etre dans un meme folder 
+exemple requests/requests.controller.ts
+        requests/requests.module.ts
+        requests/requests.service.ts
+        requests/requests.controller.ts
+        requests/dto/confirm-requests.dto
+        requests/dto/create-requests.dto.ts
+        ...
+
+
+#Auth & sécurité
+JWT auth + refresh token
+NestJS Guards, stratégie Passport
+RBAC — rôles client / employé / admin / superAdmin
+Décorateur @Roles, guard par route
+Rate limiting & CORS
+@nestjs/throttler, whitelist origines
+Audit log des actions sensibles
+Intercepteur global, table audit_logs
+#Entreprises & clients
+Module entreprises (CRUD)
+Profil, contrat, tarifs négociés
+Module clients rattachés à une entreprise
+1 entreprise → N clients
+Module adresses (plusieurs par client)
+Validation code postal belge / étranger
+Module contacts / interlocuteurs
+Email, téléphone, rôle dans l'entreprise
+#Demandes & colis
+Statuts de demande (pipeline complet)
+draft → confirmée → en transit → livré → annulé
+Webhook FedEx — mise à jour statuts
+Endpoint POST public, signature vérifiée
+Génération étiquette FedEx (PDF)
+Stockage S3 ou équivalent
+Historique des demandes par client
+Filtres, pagination, export CSV
+Annulation / modification de demande
+Règles métier selon statut courant
+#Facturation
+Génération facture PDF
+Template Handlebars ou similaire
+Intégration Peppol UBL (client B2B)
+Format XML UBL 2.1, réseau Peppol BE
+Avoir et annulation de facture
+Numérotation séquentielle légale
+Paiement en ligne (Stripe ou Mollie)
+Webhook paiement, statut payé automatique
+Calcul TVA BE / EU / hors-EU
+Taux automatique selon client et pays
+#Notifications
+Email transactionnel (confirmation, suivi)
+Nodemailer ou Resend, templates i18n
+SMS suivi colis
+Twilio ou équivalent
+Notifications in-app
+SSE ou WebSocket léger
+#Infrastructure
+Queue asynchrone pour appels FedEx
+BullMQ + Redis, retries, dead-letter queue
+Monitoring & alertes
+Sentry, health check endpoint
+Tests e2e des routes critiques
+Jest + Supertest, couverture auth + demandes
+CI/CD pipeline
+GitHub Actions, lint + tests + deploy
+#Analytics
+Dashboard KPIs (demandes, CA, délais)
+Agrégats SQL, export Excel
+Rapport mensuel automatique par client
+PDF ou email récapitulatif

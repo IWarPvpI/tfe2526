@@ -10,6 +10,7 @@ import Clients      from "../pages/Client";
 import Settings     from "../pages/Settings";
 import Login        from "../pages/Login";
 import Unauthorized from "../pages/Unauthorized";
+import TestPage from "../pages/TestPage";
 
 export default function Router() {
   return (
@@ -86,7 +87,18 @@ export default function Router() {
               </ProtectedRoute>
             }
           />
+
+          <Route
+            path="test/*"
+            element={
+              <ProtectedRoute minRole="superadmin">
+                {/* Sous-routes superadmin à ajouter ici */}
+                <TestPage/>
+              </ProtectedRoute>
+            }
+          />
         </Route>
+        
 
         {/* Catch-all */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
