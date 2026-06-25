@@ -22,7 +22,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
 export const apiService = {
     async fetchRates(formData: CreateDemandeRequest): Promise<FedexResponse> {
-        const response = await fetch(`${API_BASE_URL}/requests`, {
+        const response = await fetch(`${API_BASE_URL}/requests/quote`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(formData),
@@ -35,6 +35,20 @@ export const apiService = {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
+        });
+        return handleResponse<any>(response);
+    },
+
+    async validateAddress(addressData: { street?: string; number?: string; codePostal: string; pays: string }): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/requests/validate-address`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                street: addressData.street,
+                number: addressData.number,
+                postalCode: addressData.codePostal,
+                country: addressData.pays,
+            }),
         });
         return handleResponse<any>(response);
     },

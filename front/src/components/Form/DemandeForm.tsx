@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { useDemandeForm } from "../../hooks/useDemandeForm";
@@ -12,33 +12,20 @@ interface Adresse {
     pays: string;
 }
 
-interface FedexOption {
-    serviceType: string;
-    serviceName: string;
-    totalNetCharge: number;
-    currency: string;
-}
-
-interface FedexResponse {
-    transactionId: string;
-    options: FedexOption[];
-    quoteDate: string;
-}
-
 interface DemandeFormProps {
     onClose?: () => void;
     onSubmit: (data: any) => void;
 }
 
-const PAYS_LIMITROPHES = [
-    { code: "FR", translationKey: "countries.france" },
-    { code: "NL", translationKey: "countries.netherlands" },
-    { code: "DE", translationKey: "countries.germany" },
-    { code: "LU", translationKey: "countries.luxembourg" },
-    { code: "GB", translationKey: "countries.united_kingdom" },
-    { code: "IT", translationKey: "countries.italy" },
-    { code: "ES", translationKey: "countries.spain" }
-];
+import countries from "i18n-iso-countries";
+import frLocale from "i18n-iso-countries/langs/fr.json";
+
+countries.registerLocale(frLocale);
+
+const isoObj = countries.getNames("fr", { select: "official" });
+const LISTE_PAYS_MONDE = Object.entries(isoObj)
+    .map(([code, name]) => ({ code, name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
 const LISTE_CLIENTS = ["Dupont SA", "Durand Logistique", "Janssen Pharmaceutica", "Colruyt Group"];
 
@@ -55,7 +42,7 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
     const isClient = user?.role === "client";
 
     const { state, actions, utils } = useDemandeForm(user?.role, "Dupont SA");
-    const { client, date, livraisonDate, poids, origine, destination, adressesDisponibles, step, rates, loading, selectedOption } = state;
+    const { client, date, livraisonDate, poids, origine, destination, adressesDisponibles, step, rates, loading, selectedOption, origineError, destinationError } = state;
 
     const aujourdhui = new Date();
     const demainObj = new Date(aujourdhui);
@@ -77,6 +64,8 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
         } catch (error: any) {
             if (error.message === "INVALID_START_DATE") {
                 alert(t("demandes.errors.invalid_start_date"));
+            } else if (error.message === "INVALID_ORIGIN_ADDRESS" || error.message === "INVALID_DESTINATION_ADDRESS") {
+                // L'erreur est affichée visuellement directement dans le composant d'adresse
             } else {
                 const apiError = error as ApiError;
                 console.error("FetchRates Error:", apiError);
@@ -172,6 +161,7 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
                     setter={actions.setOrigine} isChecked={false} setIsChecked={() => {}} adressesDisponibles={adressesDisponibles}
                     client={client} onAdresseChange={actions.handleAdresseChange} sontAdressesIdentiques={() => false}
                     estAdresseRemplie={() => true} isBelgianZip={utils.isBelgianZip} t={t}
+                    addressError={origineError}
                 />
 
                 <div className="flex justify-center -my-2 relative z-10">
@@ -187,6 +177,7 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
                     setter={actions.setDestination} isChecked={false} setIsChecked={() => {}} adressesDisponibles={adressesDisponibles}
                     client={client} onAdresseChange={actions.handleAdresseChange} sontAdressesIdentiques={() => false}
                     estAdresseRemplie={() => true} isBelgianZip={utils.isBelgianZip} t={t}
+                    addressError={destinationError}
                 />
 
                 <div className="grid grid-cols-2 gap-3">
@@ -212,8 +203,8 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
                     <button type="button" onClick={onClose} className="px-4 py-2 text-sm font-medium rounded-xl border border-[var(--border)] bg-[var(--bg-hover)]" style={{ color: "var(--text-primary)" }}>
                         {t("common.cancel")}
                     </button>
-                    <button type="submit" disabled={loading} className="px-4 py-2 text-sm font-medium rounded-xl transition-opacity hover:opacity-95 disabled:opacity-50" style={{ background: "var(--accent)", color: "#fff" }}>
-                        {loading ? "Chargement..." : t("common.create")}
+                    <button type="submit" disabled={loading} className="px-5 py-2.5 text-sm font-bold rounded-xl shadow-md cursor-pointer transition-opacity hover:opacity-90 disabled:opacity-50" style={{ background: "var(--accent)", color: "#ffffff" }}>
+                        {loading ? "Vérification & Calcul..." : t("common.create")}
                     </button>
                 </div>
             </form>
@@ -221,7 +212,7 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
     );
 }
 
-function RenderAdresseFields({ type, title, data, lAutreData, setter, isChecked, setIsChecked, adressesDisponibles, client, onAdresseChange, sontAdressesIdentiques, estAdresseRemplie, isBelgianZip, t }: any) {
+function RenderAdresseFields({ type, title, data, lAutreData, setter, isChecked, setIsChecked, adressesDisponibles, client, onAdresseChange, sontAdressesIdentiques, estAdresseRemplie, isBelgianZip, t, addressError }: any) {
     const zipClean = data.codePostal.trim();
     const showPaysInput = zipClean.length > 0 && (!isBelgianZip(zipClean) && (zipClean.length >= 4 || /\D/.test(zipClean)));
     const adressesFiltrees = adressesDisponibles.filter((adr: any) => !sontAdressesIdentiques(adr, lAutreData));
@@ -229,20 +220,23 @@ function RenderAdresseFields({ type, title, data, lAutreData, setter, isChecked,
     const afficherOptionSauvegarde = client && estAdresseRemplie(data) && !existeDeja;
 
     return (
-        <div className="space-y-2 p-3 rounded-xl border border-[var(--border)] bg-[var(--bg-app)] relative">
+        <div className={`space-y-2 p-3 rounded-xl border relative transition-all ${addressError ? 'border-rose-500 bg-rose-500/5' : 'border-[var(--border)] bg-[var(--bg-app)]'}`}>
             <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--text-muted)" }}>{title}</span>
-                {adressesDisponibles.length > 0 && (
-                    <select onChange={(e) => {
-                        const idx = parseInt(e.target.value);
-                        if (!isNaN(idx)) setter({ ...adressesFiltrees[idx] });
-                    }} className="text-xs px-2 py-1 rounded border border-[var(--border)] bg-[var(--bg-surface)] outline-none max-w-[200px] cursor-pointer" style={{ color: "var(--text-primary)" }} value="">
-                        <option value="" disabled hidden>📋 {t("demandes.adresse.saved_addresses")}</option>
-                        {adressesFiltrees.map((adr: any, index: number) => (
-                            <option key={index} value={index}>{adr.rue} {adr.numero}, {adr.codePostal}</option>
-                        ))}
-                    </select>
-                )}
+                <div className="flex items-center gap-2">
+
+                    {adressesDisponibles.length > 0 && (
+                        <select onChange={(e) => {
+                            const idx = parseInt(e.target.value);
+                            if (!isNaN(idx)) setter({ ...adressesFiltrees[idx] });
+                        }} className="text-xs px-2 py-1 rounded border border-[var(--border)] bg-[var(--bg-surface)] outline-none max-w-[140px] cursor-pointer" style={{ color: "var(--text-primary)" }} value="">
+                            <option value="" disabled hidden>📋 {t("demandes.adresse.saved_addresses")}</option>
+                            {adressesFiltrees.map((adr: any, index: number) => (
+                                <option key={index} value={index}>{adr.rue} {adr.numero}, {adr.codePostal}</option>
+                            ))}
+                        </select>
+                    )}
+                </div>
             </div>
             <div className="grid grid-cols-3 gap-2">
                 <div className="flex flex-col gap-1 col-span-2">
@@ -269,9 +263,14 @@ function RenderAdresseFields({ type, title, data, lAutreData, setter, isChecked,
                     <label className="text-[11px] font-medium text-amber-600 dark:text-amber-400">{t("demandes.adresse.foreign_country_required")}</label>
                     <select required value={data.pays === "Belgique" ? "" : data.pays} onChange={(e) => onAdresseChange(type, "pays", e.target.value)} className="px-2 py-1.5 rounded-lg text-sm outline-none border border-amber-300 dark:border-amber-700 bg-[var(--bg-surface)] cursor-pointer" style={{ color: "var(--text-primary)" }}>
                         <option value="" disabled hidden>{t("demandes.adresse.select_country")}</option>
-                        {PAYS_LIMITROPHES.map((p) => (<option key={p.code} value={t(p.translationKey)}>{t(p.translationKey)}</option>))}
-                        <option value="Autre">{t("countries.other")}</option>
+                        {LISTE_PAYS_MONDE.map((p) => (<option key={p.code} value={p.name}>{p.name}</option>))}
                     </select>
+                </div>
+            )}
+            {addressError && (
+                <div className="mt-2 text-xs p-2 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/30 flex items-start gap-1.5 font-medium">
+                    <span className="shrink-0 text-sm">⚠️</span>
+                    <span>{addressError}</span>
                 </div>
             )}
             {afficherOptionSauvegarde && (

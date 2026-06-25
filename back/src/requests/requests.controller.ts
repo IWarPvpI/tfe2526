@@ -20,6 +20,12 @@ export class RequestsController {
     return this.requestsService.confirm(dto);
   }
 
+  @Post('validate-address')
+  @ApiOperation({ summary: 'Valider une adresse auprès de FedEx Address Validation API' })
+  async validateAddress(@Body() addressData: any) {
+    return this.requestsService.validateAddress(addressData);
+  }
+
   @Get()
   @ApiOperation({ summary: 'Lister toutes les demandes' })
   async findAll() {

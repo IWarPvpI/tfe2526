@@ -46,6 +46,79 @@ export class RequestsService {
     }
   }
 
+  async validateAddress(addressData: { street?: string; number?: string; postalCode: string; country: string }) {
+    try {
+      this.logger.log(`--- Validation d'Adresse auprès de FedEx ---`);
+      const countryCode = this.mapCountryToFedexCode(addressData.country);
+      const streetLine = [addressData.street, addressData.number].filter(Boolean).join(' ').trim();
+      const zipClean = (addressData.postalCode || '').trim();
+
+      if (countryCode === 'BE' && !/^[0-9]{4}$/.test(zipClean)) {
+        return { isValid: false, message: 'Le code postal belge doit contenir 4 chiffres' };
+      }
+
+      if (countryCode === 'FR' && !/^[0-9]{5}$/.test(zipClean)) {
+        return { isValid: false, message: 'Le code postal français doit contenir 5 chiffres' };
+      }
+
+      try {
+        const token = await this.getAccessToken();
+        const fedexPayload = {
+          addressesToValidate: [
+            {
+              address: {
+                streetLines: streetLine ? [streetLine] : [],
+                postalCode: zipClean,
+                countryCode: countryCode,
+              },
+            },
+          ],
+        };
+
+        const response = await axios.post(
+          `${this.FEDEX_BASE_URL}/address/v1/addresses/resolve`,
+          fedexPayload,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'x-locale': 'fr_BE',
+            },
+          },
+        );
+
+        const resolved = response.data?.output?.resolvedAddresses?.[0];
+        const isResolved = resolved?.attributes?.Resolved === 'true' || resolved?.attributes?.Resolved === true;
+
+        if (resolved && isResolved && resolved.city) {
+          return {
+            isValid: true,
+            street: resolved.streetLinesToken?.[0] || streetLine,
+            city: resolved.city || '',
+            postalCode: resolved.postalCode || zipClean,
+            countryCode: resolved.countryCode || countryCode,
+          };
+        }
+      } catch (fedexErr) {
+        this.logger.warn(`API FedEx Sandbox Resolve warning: ${fedexErr.message}`);
+      }
+
+      return {
+        isValid: true,
+        street: streetLine,
+        postalCode: zipClean,
+        countryCode: countryCode,
+        message: 'Adresse validée au niveau format local',
+      };
+    } catch (error) {
+      this.logger.error(`❌ Erreur validation adresse : ${error.message}`);
+      return {
+        isValid: false,
+        message: 'Impossible de valider l\'adresse',
+      };
+    }
+  }
+
   async confirm(confirmData: ConfirmDemandeDto) {
     try {
       this.logger.log(`--- Confirmation de Demande en DB ---`);
@@ -125,7 +198,19 @@ export class RequestsService {
   }
 
   private mapCountryToFedexCode(countryName: string): string {
-    const mapping: Record<string, string> = { 'Belgique': 'BE', 'France': 'FR', 'Allemagne': 'DE', 'Luxembourg': 'LU', 'Pays-Bas': 'NL', 'Espagne': 'ES', 'Italie': 'IT', 'Royaume-Uni': 'GB' };
-    return mapping[countryName] || 'BE';
+    if (!countryName) return 'BE';
+    const trimmed = countryName.trim();
+    if (trimmed.length === 2) return trimmed.toUpperCase();
+
+    const mapping: Record<string, string> = {
+      'Belgique': 'BE', 'France': 'FR', 'Allemagne': 'DE', 'Luxembourg': 'LU', 'Pays-Bas': 'NL',
+      'Espagne': 'ES', 'Italie': 'IT', 'Royaume-Uni': 'GB', 'États-Unis': 'US', 'Canada': 'CA',
+      'Suisse': 'CH', 'Chine': 'CN', 'Japon': 'JP', 'Australie': 'AU', 'Brésil': 'BR',
+      'Mexique': 'MX', 'Inde': 'IN', 'Émirats Arabes Unis': 'AE', 'Maroc': 'MA', 'Algérie': 'DZ',
+      'Tunisie': 'TN', 'Portugal': 'PT', 'Pologne': 'PL', 'Autriche': 'AT', 'Suède': 'SE',
+      'Norvège': 'NO', 'Danemark': 'DK', 'Finlande': 'FI', 'Irlande': 'IE', 'Grèce': 'GR',
+      'Turquie': 'TR'
+    };
+    return mapping[trimmed] || 'BE';
   }
 }
