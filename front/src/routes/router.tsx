@@ -7,6 +7,7 @@ import Demandes     from "../pages/Demande";
 import Expeditions  from "../pages/Expedition";
 import Facturation  from "../pages/Facturation";
 import Clients      from "../pages/Client";
+import ClientDetail  from "../pages/ClientDetail";
 import Settings     from "../pages/Settings";
 import Login        from "../pages/Login";
 import Unauthorized from "../pages/Unauthorized";
@@ -62,6 +63,14 @@ export default function Router() {
             element={
               <ProtectedRoute minRole="employee">
                 <Clients />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="clients/:id"
+            element={
+              <ProtectedRoute minRole="employee">
+                <ClientDetail />
               </ProtectedRoute>
             }
           />

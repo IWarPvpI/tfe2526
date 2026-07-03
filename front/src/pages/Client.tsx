@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
-interface Client {
+export interface ClientMock {
   id: string;
   nom: string;
   type: "SA" | "SPRL" | "NV" | "SCS" | "Indépendant";
@@ -13,9 +14,15 @@ interface Client {
   expeditions: number;
   ca: number;
   actif: boolean;
+  rue?: string;
+  numero?: string;
+  codePostal?: string;
+  tva?: string;
+  contactPerson?: string;
+  recentShipments?: Array<{ id: string; date: string; destination: string; status: string; total: number }>;
 }
 
-const MOCK: Client[] = [
+export const MOCK_CLIENTS: ClientMock[] = [
   { id: "CLT-001", nom: "Dupont SA",       type: "SA",          email: "contact@dupont.be",   tel: "+32 2 123 45 67", ville: "Bruxelles", pays: "BE", since: "2021-03", expeditions: 48, ca: 28400, actif: true  },
   { id: "CLT-002", nom: "Leroy SPRL",      type: "SPRL",        email: "info@leroy.be",        tel: "+32 9 234 56 78", ville: "Gand",      pays: "BE", since: "2022-01", expeditions: 23, ca: 14200, actif: true  },
   { id: "CLT-003", nom: "Martin & Co",     type: "Indépendant", email: "martin@martinco.be",   tel: "+32 4 345 67 89", ville: "Liège",     pays: "BE", since: "2023-06", expeditions: 12, ca: 6800,  actif: true  },
@@ -35,10 +42,11 @@ const AVATAR_COLORS = ["#0C447C", "#3C3489", "#085041", "#633806", "#791F1F", "#
 
 export default function Clients() {
   const { isAtLeast } = useAuth();
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filterActif, setFilterActif] = useState<"" | "true" | "false">("");
 
-  const data = MOCK
+  const data = MOCK_CLIENTS
     .filter((c) => filterActif !== "" ? String(c.actif) === filterActif : true)
     .filter((c) =>
       [c.nom, c.email, c.ville, c.id].join(" ").toLowerCase().includes(search.toLowerCase())
@@ -160,10 +168,11 @@ export default function Clients() {
                   Modifier
                 </button>
                 <button
-                  className="flex-1 text-xs py-1.5 rounded-lg transition-colors"
-                  style={{ background: "var(--bg-hover)", color: "var(--text-primary)", border: "1px solid var(--border)" }}
+                  onClick={() => navigate(`/clients/${c.id}`)}
+                  className="flex-1 text-xs py-1.5 rounded-lg transition-colors cursor-pointer font-medium"
+                  style={{ background: "var(--accent)", color: "#ffffff" }}
                 >
-                  Voir détail
+                  Voir détail →
                 </button>
               </div>
             )}

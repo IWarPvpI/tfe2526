@@ -2,27 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* ── Theme tokens ───────────────────────────────────────── */
+/* ── Theme tokens (Charte Officielle Uniship) ─────────── */
 :root {
-  --bg-app:      #0b0f1a;
-  --bg-surface:  #0f172a;
-  --bg-hover:    rgba(255, 255, 255, 0.08);
-  --bg-active:   rgba(255, 255, 255, 0.14);
-  --border:      rgba(255, 255, 255, 0.10);
-  --text-primary:   #f1f5f9;
-  --text-muted:     rgba(255, 255, 255, 0.55);
-  --accent:      #3b82f6;
+  --bg-app:         #09111E;
+  --bg-surface:     #0F1D2A;
+  --bg-hover:       rgba(242, 122, 23, 0.10);
+  --bg-active:      rgba(242, 122, 23, 0.18);
+  --border:         #1B2D40;
+  --text-primary:   #F1F5F9;
+  --text-muted:     #8CA3BA;
+  --accent:         #F27A17;
+  --accent-hover:   #D8650A;
+  --navy:           #163A63;
+  --azure:          #1E65A6;
+  --logo-text:      #FFFFFF;
 }
 
 [data-theme="light"] {
-  --bg-app:      #f1f5f9;
-  --bg-surface:  #ffffff;
-  --bg-hover:    rgba(0, 0, 0, 0.05);
-  --bg-active:   rgba(0, 0, 0, 0.10);
-  --border:      rgba(0, 0, 0, 0.10);
-  --text-primary:   #0f172a;
-  --text-muted:     rgba(0, 0, 0, 0.50);
-  --accent:      #2563eb;
+  --bg-app:         #F8FAFC;
+  --bg-surface:     #FFFFFF;
+  --bg-hover:       rgba(242, 122, 23, 0.08);
+  --bg-active:      rgba(242, 122, 23, 0.16);
+  --border:         #E2E8F0;
+  --text-primary:   #0F2537;
+  --text-muted:     #64748B;
+  --accent:         #F27A17;
+  --accent-hover:   #D8650A;
+  --navy:           #163A63;
+  --azure:          #1E65A6;
+  --logo-text:      #163A63;
 }
 
 /* ── Base ───────────────────────────────────────────────── */

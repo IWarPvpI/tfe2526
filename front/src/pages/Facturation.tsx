@@ -33,7 +33,7 @@ const fmt = (n: number) =>
   new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR" }).format(n);
 
 export default function Facturation() {
-  const { user, isAtLeast } = useAuth();
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<PayStatus | "">("");
 

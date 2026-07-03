@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+    import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import DemandeForm from "../components/Form/DemandeForm";
@@ -29,7 +29,7 @@ const STATUS_STYLE: Record<Status, { label: string; bg: string; color: string }>
 };
 
 export default function Demandes() {
-    const { user, isAtLeast, hasPermission } = useAuth();
+    const { user, isAtLeast } = useAuth();
     const { t } = useTranslation();
     
     const [requests, setRequests] = useState<Demande[]>(INITIAL_MOCK);
