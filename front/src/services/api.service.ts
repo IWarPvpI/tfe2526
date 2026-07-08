@@ -52,4 +52,18 @@ export const apiService = {
         });
         return handleResponse<any>(response);
     },
+
+    async getEnterprises(): Promise<any[]> {
+        const response = await fetch(`${API_BASE_URL}/enterprises`);
+        return handleResponse<any[]>(response);
+    },
+
+    async createEnterprise(enterpriseData: { name: string; email?: string; phone?: string; type?: string; city?: string; country?: string; vatNumber?: string }): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/enterprises`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(enterpriseData),
+        });
+        return handleResponse<any>(response);
+    },
 };

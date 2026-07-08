@@ -10,6 +10,24 @@ export class Enterprise {
   name: string;
 
   @Column({ nullable: true })
+  email: string;
+
+  @Column({ nullable: true })
+  phone: string;
+
+  @Column({ nullable: true, default: 'SA' })
+  type: string;
+
+  @Column({ nullable: true })
+  city: string;
+
+  @Column({ nullable: true, default: 'Belgique' })
+  country: string;
+
+  @Column({ default: true })
+  status: boolean;
+
+  @Column({ nullable: true })
   vatNumber: string;
 
   @Column({ nullable: true })
