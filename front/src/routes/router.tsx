@@ -8,6 +8,7 @@ import Expeditions  from "../pages/Expedition";
 import Facturation  from "../pages/Facturation";
 import Clients      from "../pages/Client";
 import ClientDetail  from "../pages/ClientDetail";
+import Users         from "../pages/Users";
 import Settings     from "../pages/Settings";
 import Login        from "../pages/Login";
 import Unauthorized from "../pages/Unauthorized";
@@ -75,13 +76,12 @@ export default function Router() {
             }
           />
 
-          {/* Admin minimum */}
+          {/* Admin minimum - Gestion des Comptes EF8 */}
           <Route
-            path="admin/*"
+            path="admin/users"
             element={
               <ProtectedRoute minRole="admin">
-                {/* Sous-routes admin à ajouter ici */}
-                <div>Admin panel</div>
+                <Users />
               </ProtectedRoute>
             }
           />

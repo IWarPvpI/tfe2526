@@ -9,17 +9,17 @@ export class UsersController {
 
   @Get()
   @ApiOperation({ summary: 'Lister les utilisateurs' })
-  findAll() { return { message: 'Not implemented' }; }
+  findAll() { return this.usersService.findAll(); }
 
   @Get(':id')
   @ApiOperation({ summary: 'Détails utilisateur' })
-  findOne(@Param('id') id: string) { return { message: 'Not implemented' }; }
+  findOne(@Param('id') id: string) { return this.usersService.findOne(id); }
 
   @Patch(':id')
   @ApiOperation({ summary: 'Mettre à jour un utilisateur' })
-  update(@Param('id') id: string, @Body() body: any) { return { message: 'Not implemented' }; }
+  update(@Param('id') id: string, @Body() body: any) { return this.usersService.update(id, body); }
 
   @Delete(':id')
   @ApiOperation({ summary: 'Supprimer un utilisateur' })
-  remove(@Param('id') id: string) { return { message: 'Not implemented' }; }
+  remove(@Param('id') id: string) { return this.usersService.remove(id); }
 }

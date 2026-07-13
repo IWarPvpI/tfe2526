@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { key: "expeditions", icon: "🚚", path: "/expeditions" },
   { key: "clients", icon: "👥", path: "/clients" },
   { key: "facturation", icon: "💶", path: "/facturation" },
+  { key: "users", icon: "🛡️", path: "/admin/users" },
 ] as const;
 
 export default function Layout() {

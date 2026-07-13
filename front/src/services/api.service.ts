@@ -66,4 +66,9 @@ export const apiService = {
         });
         return handleResponse<any>(response);
     },
+
+    async getUsers(): Promise<any[]> {
+        const response = await fetch(`${API_BASE_URL}/users`);
+        return handleResponse<any[]>(response);
+    },
 };
