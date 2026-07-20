@@ -121,27 +121,96 @@ export class RequestsService {
 
   async confirm(confirmData: ConfirmDemandeDto) {
     try {
-      this.logger.log(`--- Confirmation de Demande en DB ---`);
+      this.logger.log(`--- Confirmation de Demande en DB & FedEx Ship API ---`);
 
       const newRequest = this.requestRepo.create({
-        user: { email: confirmData.client } as any, // Mock utilisateur client
+        user: { email: confirmData.client } as any,
         shippingDetails: {
           origine: confirmData.origine,
           destination: confirmData.destination,
           date: confirmData.date,
           livraisonDate: confirmData.livraisonDate,
-          poids: confirmData.poids
+          poids: confirmData.poids,
         },
         selectedOption: confirmData.selectedOption,
-        status: RequestStatus.CONFIRMED
+        status: RequestStatus.CONFIRMED,
       });
+
+      try {
+        const token = await this.getAccessToken();
+        const fedexPayload = {
+          labelResponseOptions: 'URL_ONLY',
+          requestedShipment: {
+            shipper: {
+              contact: {
+                personName: confirmData.client || 'Client Uniship',
+              },
+              address: {
+                streetLines: [
+                  `${confirmData.origine.rue} ${confirmData.origine.numero }`.trim(),
+                ],
+                city: confirmData.origine.ville,
+                postalCode: confirmData.origine.codePostal,
+                countryCode: this.mapCountryToFedexCode(confirmData.origine.pays),
+              },
+            },
+            recipients: [
+              {
+                contact: {
+                  personName: 'Destinataire',
+                },
+                address: {
+                  streetLines: [
+                    `${confirmData.destination.rue} ${confirmData.destination.numero}`.trim(),
+                  ],
+                  city: confirmData.destination.ville,
+                  postalCode: confirmData.destination.codePostal,
+                  countryCode: this.mapCountryToFedexCode(confirmData.destination.pays),
+                },
+              },
+            ],
+            serviceType: confirmData.selectedOption,
+            packagingType: 'YOUR_PACKAGING',
+            pickupType: 'USE_SCHEDULED_PICKUP',
+            labelSpecification: {
+              imageType: 'PDF',
+              labelStockType: 'PAPER_8.5X11_TOP_OPTION_ONLY',
+            },
+            requestedPackageLineItems: [
+              {
+                weight: { units: 'KG', value: confirmData.poids },
+              },
+            ],
+          },
+          accountNumber: this.FEDEX_ACCOUNT_NUMBER,
+        };
+
+        const response = await axios.post(
+          `${this.FEDEX_BASE_URL}/ship/v1/shipments`,
+          fedexPayload,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              'x-locale': 'fr_BE',
+            },
+          },
+        );
+
+        const shipment = response.data?.output?.transactionShipments?.[0];
+        newRequest.fedexTrackingNumber = shipment.masterTrackingNumber;
+        newRequest.labelUrl = shipment.shipmentDocuments?.[0]?.url;
+
+      } catch (fedexErr) {
+        this.logger.warn(` ❌ Erreur lors de la confirmation fedex: ${fedexErr.message}`);
+      }
 
       const savedRequest = await this.requestRepo.save(newRequest);
 
       return {
         message: 'Demande confirmée et enregistrée en base de données',
         confirmationId: savedRequest.id,
-        details: savedRequest
+        details: savedRequest,
       };
     } catch (error) {
       this.logger.error(`❌ Erreur lors de la confirmation : ${error.message}`);
