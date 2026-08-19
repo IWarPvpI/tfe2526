@@ -11,6 +11,10 @@ export class UsersController {
   @ApiOperation({ summary: 'Lister les utilisateurs' })
   findAll() { return this.usersService.findAll(); }
 
+  @Post()
+  @ApiOperation({ summary: 'Créer un utilisateur' })
+  create(@Body() body: any) { return this.usersService.create(body); }
+
   @Get(':id')
   @ApiOperation({ summary: 'Détails utilisateur' })
   findOne(@Param('id') id: string) { return this.usersService.findOne(id); }

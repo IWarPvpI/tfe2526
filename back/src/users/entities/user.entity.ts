@@ -23,7 +23,7 @@ export class User {
   @Column()
   phone: string;
 
-  @Column({ default: true })
+  @Column()
   isActive: boolean;
 
   @ManyToOne(() => Role)

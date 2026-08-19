@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api.service";
+import UserForm from "../components/Form/UserForm";
 
 interface UserAccount {
   id: string;
@@ -36,9 +37,9 @@ export default function Users() {
   const [users, setUsers] = useState<UserAccount[]>(MOCK_USERS_LIST);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("");
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    // Tentative de récupération réelle depuis le NestJS Backend (GET /users)
     apiService.getUsers()
       .then((res) => {
         if (Array.isArray(res) && res.length > 0) {
@@ -54,10 +55,34 @@ export default function Users() {
           setUsers(mapped);
         }
       })
-      .catch(() => {
-        // Mode fallback gracieux en mémoire
-      });
+      .catch(() => {});
   }, []);
+
+  const handleAddUser = async (data: any) => {
+    const newUser: UserAccount = {
+      id: `USR-00${users.length + 1}`,
+      name: `${data.firstName} ${data.lastName}`.trim() || data.email,
+      email: data.email,
+      role: "client",
+      enterprise: "Particulier",
+      isActive: true,
+      createdAt: new Date().toISOString().slice(0, 10),
+    };
+
+    try {
+      await apiService.createUser({
+        firstName: data.firstName,
+        lastName: data.lastName,
+        email: data.email,
+        phone: data.phone,
+        passwordHash: data.passwordHash,
+      });
+    } catch (err) {
+    }
+
+    setUsers([newUser, ...users]);
+    setShowModal(false);
+  };
 
   const toggleStatus = (id: string) => {
     setUsers((prev) =>
@@ -86,6 +111,7 @@ export default function Users() {
 
         {isAtLeast("admin") && (
           <button
+            onClick={() => setShowModal(true)}
             className="px-4 py-2 rounded-xl text-xs font-bold shadow-md cursor-pointer transition-opacity hover:opacity-90"
             style={{ background: "var(--accent)", color: "#ffffff" }}
           >
@@ -234,6 +260,13 @@ export default function Users() {
           Total : {filtered.length} compte(s) utilisateur(s)
         </div>
       </div>
+
+      {showModal && (
+        <UserForm
+          onClose={() => setShowModal(false)}
+          onSubmit={handleAddUser}
+        />
+      )}
     </div>
   );
 }

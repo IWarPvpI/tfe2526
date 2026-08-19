@@ -72,4 +72,13 @@ export const apiService = {
         return handleResponse<any[]>(response);
     },
 
+    async createUser(userData: { firstName: string; lastName: string; email: string; phone?: string; password?: string }): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userData),
+        });
+        return handleResponse<any>(response);
+    },
+
 };
