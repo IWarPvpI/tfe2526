@@ -72,7 +72,7 @@ export const apiService = {
         return handleResponse<any[]>(response);
     },
 
-    async createUser(userData: { firstName: string; lastName: string; email: string; phone?: string; password?: string }): Promise<any> {
+    async createUser(userData: { firstName: string; lastName: string; email: string; phone?: string; password?: string; passwordHash?: string; role?: string }): Promise<any> {
         const response = await fetch(`${API_BASE_URL}/users`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -81,4 +81,13 @@ export const apiService = {
         return handleResponse<any>(response);
     },
 
+    async getExpeditions(): Promise<any[]> {
+        const response = await fetch(`${API_BASE_URL}/requests`);
+        return handleResponse<any[]>(response);
+    },
+
+    async trackShipment(trackingNumber: string): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/requests/track/${trackingNumber}`);
+        return handleResponse<any>(response);
+    },
 };

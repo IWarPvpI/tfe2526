@@ -27,15 +27,20 @@ export class RequestsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Lister toutes les demandes' })
+  @ApiOperation({ summary: 'Lister toutes les demandes et expéditions' })
   async findAll() {
-    // Future implémentation dans le service
-    return { message: 'Not implemented yet' };
+    return this.requestsService.findAll();
+  }
+
+  @Get('track/:trackingNumber')
+  @ApiOperation({ summary: 'Suivi en temps réel auprès de FedEx Track API' })
+  async trackShipment(@Param('trackingNumber') trackingNumber: string) {
+    return this.requestsService.trackShipment(trackingNumber);
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtenir le détail d\'une demande' })
   async findOne(@Param('id') id: string) {
-    return { message: 'Not implemented yet' };
+    return this.requestsService.findOne(id);
   }
 }

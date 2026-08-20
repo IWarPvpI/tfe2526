@@ -8,7 +8,7 @@ import axios from 'axios';
 @Injectable()
 export class RequestsService {
   private readonly logger = new Logger(RequestsService.name);
-  
+
   constructor(
     @InjectRepository(Request)
     private readonly requestRepo: Repository<Request>,
@@ -18,6 +18,8 @@ export class RequestsService {
   private readonly FEDEX_CLIENT_SECRET = process.env.FEDEX_CLIENT_SECRET;
   private readonly FEDEX_ACCOUNT_NUMBER = process.env.FEDEX_ACCOUNT_NUMBER;
   private readonly FEDEX_BASE_URL = process.env.FEDEX_BASE_URL;
+  private readonly FEDEX_TRACK_CLIENT_ID = process.env.FEDEX_TRACK_CLIENT_ID;
+  private readonly FEDEX_TRACK_CLIENT_SECRET = process.env.FEDEX_TRACK_CLIENT_SECRET;
 
   private cachedToken: { token: string; expiresAt: number } | null = null;
 
@@ -32,33 +34,49 @@ export class RequestsService {
         fedexPayload,
         {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
             'x-locale': 'fr_BE',
           },
-        }
+        },
       );
 
       return this.simplifyFedexResponse(response.data);
     } catch (error) {
-      this.logger.error(`❌ Erreur critique FedEx : ${error.response?.data || error.message}`);
+      this.logger.error(
+        `❌ Erreur critique FedEx : ${error.response?.data || error.message}`,
+      );
       throw error;
     }
   }
 
-  async validateAddress(addressData: { street?: string; number?: string; postalCode: string; country: string }) {
+  async validateAddress(addressData: {
+    street?: string;
+    number?: string;
+    postalCode: string;
+    country: string;
+  }) {
     try {
       this.logger.log(`--- Validation d'Adresse auprès de FedEx ---`);
       const countryCode = this.mapCountryToFedexCode(addressData.country);
-      const streetLine = [addressData.street, addressData.number].filter(Boolean).join(' ').trim();
+      const streetLine = [addressData.street, addressData.number]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
       const zipClean = (addressData.postalCode || '').trim();
 
       if (countryCode === 'BE' && !/^[0-9]{4}$/.test(zipClean)) {
-        return { isValid: false, message: 'Le code postal belge doit contenir 4 chiffres' };
+        return {
+          isValid: false,
+          message: 'Le code postal belge doit contenir 4 chiffres',
+        };
       }
 
       if (countryCode === 'FR' && !/^[0-9]{5}$/.test(zipClean)) {
-        return { isValid: false, message: 'Le code postal français doit contenir 5 chiffres' };
+        return {
+          isValid: false,
+          message: 'Le code postal français doit contenir 5 chiffres',
+        };
       }
 
       try {
@@ -80,7 +98,7 @@ export class RequestsService {
           fedexPayload,
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
               'Content-Type': 'application/json',
               'x-locale': 'fr_BE',
             },
@@ -88,7 +106,9 @@ export class RequestsService {
         );
 
         const resolved = response.data?.output?.resolvedAddresses?.[0];
-        const isResolved = resolved?.attributes?.Resolved === 'true' || resolved?.attributes?.Resolved === true;
+        const isResolved =
+          resolved?.attributes?.Resolved === 'true' ||
+          resolved?.attributes?.Resolved === true;
 
         if (resolved && isResolved && resolved.city) {
           return {
@@ -100,7 +120,9 @@ export class RequestsService {
           };
         }
       } catch (fedexErr) {
-        this.logger.warn(`API FedEx Sandbox Resolve warning: ${fedexErr.message}`);
+        this.logger.warn(
+          `API FedEx Sandbox Resolve warning: ${fedexErr.message}`,
+        );
       }
 
       return {
@@ -114,7 +136,7 @@ export class RequestsService {
       this.logger.error(`❌ Erreur validation adresse : ${error.message}`);
       return {
         isValid: false,
-        message: 'Impossible de valider l\'adresse',
+        message: "Impossible de valider l'adresse",
       };
     }
   }
@@ -147,11 +169,13 @@ export class RequestsService {
               },
               address: {
                 streetLines: [
-                  `${confirmData.origine.rue} ${confirmData.origine.numero }`.trim(),
+                  `${confirmData.origine.rue} ${confirmData.origine.numero}`.trim(),
                 ],
                 city: confirmData.origine.ville,
                 postalCode: confirmData.origine.codePostal,
-                countryCode: this.mapCountryToFedexCode(confirmData.origine.pays),
+                countryCode: this.mapCountryToFedexCode(
+                  confirmData.origine.pays,
+                ),
               },
             },
             recipients: [
@@ -165,7 +189,9 @@ export class RequestsService {
                   ],
                   city: confirmData.destination.ville,
                   postalCode: confirmData.destination.codePostal,
-                  countryCode: this.mapCountryToFedexCode(confirmData.destination.pays),
+                  countryCode: this.mapCountryToFedexCode(
+                    confirmData.destination.pays,
+                  ),
                 },
               },
             ],
@@ -200,9 +226,10 @@ export class RequestsService {
         const shipment = response.data?.output?.transactionShipments?.[0];
         newRequest.fedexTrackingNumber = shipment.masterTrackingNumber;
         newRequest.labelUrl = shipment.shipmentDocuments?.[0]?.url;
-
       } catch (fedexErr) {
-        this.logger.warn(` ❌ Erreur lors de la confirmation fedex: ${fedexErr.message}`);
+        this.logger.warn(
+          ` ❌ Erreur lors de la confirmation fedex: ${fedexErr.message}`,
+        );
       }
 
       const savedRequest = await this.requestRepo.save(newRequest);
@@ -218,22 +245,142 @@ export class RequestsService {
     }
   }
 
+  async findAll() {
+    return this.requestRepo.find({
+      order: { createdAt: 'DESC' },
+      relations: {
+        user: true,
+        createdBy: true,
+      },
+    });
+  }
+
+  async findOne(id: string) {
+    return this.requestRepo.findOne({
+      where: { id },
+      relations: {
+        user: true,
+        createdBy: true,
+      },
+    });
+  }
+
+  private cachedTrackToken: { token: string; expiresAt: number } | null = null;
+
+  async trackShipment(trackingNumber: string) {
+    if (
+      !trackingNumber ||
+      trackingNumber === 'null' ||
+      trackingNumber === 'undefined'
+    ) {
+      return {
+        trackingNumber: null,
+        status: null,
+        statusCode: null,
+        estimatedDelivery: null,
+        actualDelivery: null,
+        scanEvents: [],
+      };
+    }
+
+    try {
+      this.logger.log(
+        `🔍 [FedEx Track] Interrogation du statut pour : ${trackingNumber}`,
+      );
+      const token = await this.getTrackAccessToken();
+      const baseUrl = this.FEDEX_BASE_URL;
+      const response = await axios.post(
+        `${baseUrl}/track/v1/trackingnumbers`,
+        {
+          includeDetailedScans: true,
+          trackingInfo: [
+            {
+              trackingNumberInfo: {
+                trackingNumber: trackingNumber,
+              },
+            },
+          ],
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+            'x-locale': 'fr_BE',
+          },
+        },
+      );
+
+      const trackResult =
+        response.data?.output?.completeTrackResults?.[0]?.trackResults?.[0];
+      return {
+        trackingNumber: trackingNumber,
+        status:
+          trackResult?.latestStatusDetail?.statusByLocale ??
+          trackResult?.latestStatusDetail?.description ??
+          null,
+        statusCode: trackResult?.latestStatusDetail?.code ?? null,
+        estimatedDelivery:
+          trackResult?.dateAndTimes?.find(
+            (d: any) => d.type === 'ESTIMATED_DELIVERY',
+          )?.dateTime ?? null,
+        actualDelivery:
+          trackResult?.dateAndTimes?.find(
+            (d: any) => d.type === 'ACTUAL_DELIVERY',
+          )?.dateTime ?? null,
+        scanEvents: trackResult?.scanEvents ?? [],
+      };
+    } catch (error) {
+      this.logger.error(
+        `❌ Erreur FedEx Track API (${trackingNumber}): ${error.response?.data ? JSON.stringify(error.response.data) : error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  private async getTrackAccessToken(): Promise<string> {
+    if (this.cachedTrackToken && Date.now() < this.cachedTrackToken.expiresAt)
+      return this.cachedTrackToken.token;
+
+    //TODO
+    const clientId = this.FEDEX_TRACK_CLIENT_ID;
+    const clientSecret = this.FEDEX_TRACK_CLIENT_SECRET;
+    const baseUrl = this.FEDEX_BASE_URL;
+
+    const params = new URLSearchParams();
+    params.append('grant_type', 'client_credentials');
+    params.append('client_id', clientId!);
+    params.append('client_secret', clientSecret!);
+
+    const response = await axios.post(`${baseUrl}/oauth/token`, params, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    });
+
+    const data = response.data;
+    this.cachedTrackToken = {
+      token: data.access_token,
+      expiresAt: Date.now() + data.expires_in * 1000 - 60000,
+    };
+    return data.access_token;
+  }
+
   private async getAccessToken(): Promise<string> {
-    if (this.cachedToken && Date.now() < this.cachedToken.expiresAt) return this.cachedToken.token;
-    
+    if (this.cachedToken && Date.now() < this.cachedToken.expiresAt)
+      return this.cachedToken.token;
+
+    const baseUrl = this.FEDEX_BASE_URL;
     const params = new URLSearchParams();
     params.append('grant_type', 'client_credentials');
     params.append('client_id', this.FEDEX_CLIENT_ID!);
     params.append('client_secret', this.FEDEX_CLIENT_SECRET!);
 
-    const response = await axios.post(`${this.FEDEX_BASE_URL}/oauth/token`, params, {
+    const response = await axios.post(`${baseUrl}oauth/token`, params, {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     });
 
     const data = response.data;
     this.cachedToken = {
       token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in * 1000) - 60000,
+      expiresAt: Date.now() + data.expires_in * 1000 - 60000,
     };
     return data.access_token;
   }
@@ -250,18 +397,34 @@ export class RequestsService {
         currency: ratedDetail.currency || 'USD',
       };
     });
-    return { transactionId: data.transactionId || 'N/A', options, quoteDate: output.quoteDate || new Date().toISOString() };
+    return {
+      transactionId: data.transactionId || 'N/A',
+      options,
+      quoteDate: output.quoteDate || new Date().toISOString(),
+    };
   }
 
   private mapToFedexFormat(data: any) {
     return {
       accountNumber: { value: String(this.FEDEX_ACCOUNT_NUMBER) },
       requestedShipment: {
-        shipper: { address: { postalCode: data.origine.codePostal, countryCode: this.mapCountryToFedexCode(data.origine.pays) } },
-        recipient: { address: { postalCode: data.destination.codePostal, countryCode: this.mapCountryToFedexCode(data.destination.pays) } },
+        shipper: {
+          address: {
+            postalCode: data.origine.codePostal,
+            countryCode: this.mapCountryToFedexCode(data.origine.pays),
+          },
+        },
+        recipient: {
+          address: {
+            postalCode: data.destination.codePostal,
+            countryCode: this.mapCountryToFedexCode(data.destination.pays),
+          },
+        },
         pickupType: 'USE_SCHEDULED_PICKUP',
         rateRequestType: ['ACCOUNT'],
-        requestedPackageLineItems: [{ weight: { units: 'KG', value: parseFloat(data.poids) || 0 } }],
+        requestedPackageLineItems: [
+          { weight: { units: 'KG', value: parseFloat(data.poids) || 0 } },
+        ],
       },
     };
   }
@@ -272,13 +435,37 @@ export class RequestsService {
     if (trimmed.length === 2) return trimmed.toUpperCase();
 
     const mapping: Record<string, string> = {
-      'Belgique': 'BE', 'France': 'FR', 'Allemagne': 'DE', 'Luxembourg': 'LU', 'Pays-Bas': 'NL',
-      'Espagne': 'ES', 'Italie': 'IT', 'Royaume-Uni': 'GB', 'États-Unis': 'US', 'Canada': 'CA',
-      'Suisse': 'CH', 'Chine': 'CN', 'Japon': 'JP', 'Australie': 'AU', 'Brésil': 'BR',
-      'Mexique': 'MX', 'Inde': 'IN', 'Émirats Arabes Unis': 'AE', 'Maroc': 'MA', 'Algérie': 'DZ',
-      'Tunisie': 'TN', 'Portugal': 'PT', 'Pologne': 'PL', 'Autriche': 'AT', 'Suède': 'SE',
-      'Norvège': 'NO', 'Danemark': 'DK', 'Finlande': 'FI', 'Irlande': 'IE', 'Grèce': 'GR',
-      'Turquie': 'TR'
+      Belgique: 'BE',
+      France: 'FR',
+      Allemagne: 'DE',
+      Luxembourg: 'LU',
+      'Pays-Bas': 'NL',
+      Espagne: 'ES',
+      Italie: 'IT',
+      'Royaume-Uni': 'GB',
+      'États-Unis': 'US',
+      Canada: 'CA',
+      Suisse: 'CH',
+      Chine: 'CN',
+      Japon: 'JP',
+      Australie: 'AU',
+      Brésil: 'BR',
+      Mexique: 'MX',
+      Inde: 'IN',
+      'Émirats Arabes Unis': 'AE',
+      Maroc: 'MA',
+      Algérie: 'DZ',
+      Tunisie: 'TN',
+      Portugal: 'PT',
+      Pologne: 'PL',
+      Autriche: 'AT',
+      Suède: 'SE',
+      Norvège: 'NO',
+      Danemark: 'DK',
+      Finlande: 'FI',
+      Irlande: 'IE',
+      Grèce: 'GR',
+      Turquie: 'TR',
     };
     return mapping[trimmed] || 'BE';
   }

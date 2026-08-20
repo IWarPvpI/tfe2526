@@ -2,12 +2,14 @@ import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateCol
 import { User } from '../../users/entities/user.entity';
 
 export enum RequestStatus {
-  DRAFT = 'DRAFT',
-  CONFIRMED = 'CONFIRMED',
-  SHIPPED = 'SHIPPED',
+  INITIATED = 'INITIATED',
+  PICKED_UP = 'PICKED_UP',
   IN_TRANSIT = 'IN_TRANSIT',
   OUT_FOR_DELIVERY = 'OUT_FOR_DELIVERY',
   DELIVERED = 'DELIVERED',
+  DRAFT = 'DRAFT',
+  CONFIRMED = 'CONFIRMED',
+  SHIPPED = 'SHIPPED',
   CANCELLED = 'CANCELLED',
 }
 
