@@ -90,4 +90,9 @@ export const apiService = {
         const response = await fetch(`${API_BASE_URL}/requests/track/${trackingNumber}`);
         return handleResponse<any>(response);
     },
+
+    async getInvoices(): Promise<any[]> {
+        const response = await fetch(`${API_BASE_URL}/invoices`);
+        return handleResponse<any[]>(response);
+    },
 };
