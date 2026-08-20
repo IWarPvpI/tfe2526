@@ -15,6 +15,24 @@ export class PaymentsController {
   @ApiOperation({ summary: "Détail d'un paiement" })
   findOne(@Param('id') id: string) { return this.paymentsService.findOne(id); }
 
+  @Post('create-checkout-session')
+  @ApiOperation({ summary: "Créer une session de paiement Stripe Checkout" })
+  createCheckoutSession(@Body() body: { invoiceId: string; amount?: number }) {
+    return this.paymentsService.createCheckoutSession(body.invoiceId, body.amount);
+  }
+
+  @Get('verify/:sessionId')
+  @ApiOperation({ summary: "Vérifier le statut d'un paiement Stripe" })
+  verifySession(@Param('sessionId') sessionId: string) {
+    return this.paymentsService.verifySession(sessionId);
+  }
+
+  @Post('webhook')
+  @ApiOperation({ summary: "Webhook Stripe" })
+  webhook(@Body() body: any) {
+    return this.paymentsService.webhook(body);
+  }
+
   @Post()
   @ApiOperation({ summary: "Créer un paiement" })
   create(@Body() body: any) { return this.paymentsService.create(body); }

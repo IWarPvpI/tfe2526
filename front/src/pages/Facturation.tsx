@@ -6,6 +6,7 @@ type PayStatus = "payee" | "en_attente" | "en_retard";
 
 interface Facture {
   id: string;
+  invoiceNumber: string;
   ref: string;
   client: string;
   date: string;
@@ -30,8 +31,10 @@ export default function Facturation() {
   const [search, setSearch] = useState("");
   const [filterStatus, setFilterStatus] = useState<PayStatus | "">("");
   const [selectedInvoice, setSelectedInvoice] = useState<Facture | null>(null);
+  const [paymentFeedback, setPaymentFeedback] = useState<{ type: "success" | "cancel"; message: string } | null>(null);
+  const [payingInvoiceId, setPayingInvoiceId] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadInvoices = () => {
     apiService.getInvoices()
       .then((res) => {
         if (Array.isArray(res) && res.length > 0) {
@@ -50,7 +53,8 @@ export default function Facturation() {
               : "";
 
             return {
-              id: inv.invoiceNumber ? inv.invoiceNumber : `FAC-2026-${String(idx + 1).padStart(3, "0")}`,
+              id: inv.id,
+              invoiceNumber: inv.invoiceNumber ? inv.invoiceNumber : `FAC-2026-${String(idx + 1).padStart(3, "0")}`,
               ref: inv.request?.fedexTrackingNumber ? inv.request.fedexTrackingNumber : (inv.request?.id ? `EXP-${inv.request.id.slice(0, 6)}` : ""),
               client: clientName,
               date: dateStr,
@@ -64,7 +68,52 @@ export default function Facturation() {
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadInvoices();
+
+    const query = new URLSearchParams(window.location.search);
+    const payment = query.get("payment");
+    const sessionId = query.get("session_id");
+
+    if (payment === "success" && sessionId) {
+      apiService.verifyStripePayment(sessionId)
+        .then(() => {
+          loadInvoices();
+          setPaymentFeedback({
+            type: "success",
+            message: "Paiement validé avec succès par Stripe ! Votre facture est désormais enregistrée comme Payée.",
+          });
+        })
+        .catch(() => {
+          loadInvoices();
+        });
+    } else if (payment === "cancel") {
+      setPaymentFeedback({
+        type: "cancel",
+        message: "Paiement annulé. Vous pouvez réessayer le règlement de votre facture à tout moment.",
+      });
+    }
   }, []);
+
+  const handlePayStripe = async (f: Facture) => {
+    setPayingInvoiceId(f.id);
+    try {
+      const ttc = f.montantHT * (1 + f.tva / 100);
+      const res = await apiService.createStripeCheckoutSession(f.id, ttc);
+      if (res?.url) {
+        window.open(res.url, "_blank");
+      }
+    } catch (err) {
+      setPaymentFeedback({
+        type: "cancel",
+        message: "Impossible d'initialiser la session de paiement Stripe. Veuillez réessayer.",
+      });
+    } finally {
+      setPayingInvoiceId(null);
+    }
+  };
 
   const data = facturesList
     .filter((f) => {
@@ -76,7 +125,7 @@ export default function Facturation() {
     })
     .filter((f) => filterStatus ? f.status === filterStatus : true)
     .filter((f) =>
-      [f.id, f.ref, f.client].join(" ").toLowerCase().includes(search.toLowerCase())
+      [f.id, f.invoiceNumber, f.ref, f.client].join(" ").toLowerCase().includes(search.toLowerCase())
     );
 
   const totalHT  = data.reduce((s, f) => s + f.montantHT, 0);
@@ -84,6 +133,25 @@ export default function Facturation() {
 
   return (
     <div className="space-y-5">
+      {paymentFeedback && (
+        <div
+          className="p-4 rounded-xl flex items-center justify-between text-xs font-medium"
+          style={{
+            background: paymentFeedback.type === "success" ? "#E1F5EE" : "#FCEBEB",
+            color: paymentFeedback.type === "success" ? "#085041" : "#791F1F",
+            border: `1px solid ${paymentFeedback.type === "success" ? "#9FE1CB" : "#F7C1C1"}`,
+          }}
+        >
+          <div className="flex items-center gap-2">
+            <span>{paymentFeedback.type === "success" ? "✓" : "⚠️"}</span>
+            <span>{paymentFeedback.message}</span>
+          </div>
+          <button onClick={() => setPaymentFeedback(null)} className="font-bold ml-4">
+            ✕
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-bold" style={{ color: "var(--text-primary)" }}>
@@ -148,7 +216,7 @@ export default function Facturation() {
         <table className="w-full text-sm">
           <thead>
             <tr style={{ background: "var(--bg-surface)", borderBottom: "1px solid var(--border)" }}>
-              {["N° Facture", "Réf.", "Client", "Date", "Échéance", "HT", "TVA", "TTC", "Statut", "Action"].map((h) => (
+              {["N° Facture", "Réf.", "Client", "Date", "Échéance", "HT", "TVA", "TTC", "Statut", "Actions"].map((h) => (
                 <th key={h} className="px-4 py-3 text-left font-medium" style={{ color: "var(--text-muted)" }}>
                   {h}
                 </th>
@@ -173,7 +241,7 @@ export default function Facturation() {
                     borderBottom: "1px solid var(--border)",
                   }}
                 >
-                  <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{f.id}</td>
+                  <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{f.invoiceNumber}</td>
                   <td className="px-4 py-3 font-mono text-xs" style={{ color: "var(--text-muted)" }}>{f.ref}</td>
                   <td className="px-4 py-3 font-medium" style={{ color: "var(--text-primary)" }}>{f.client}</td>
                   <td className="px-4 py-3" style={{ color: "var(--text-muted)" }}>{f.date}</td>
@@ -192,16 +260,30 @@ export default function Facturation() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <button
-                      onClick={() => setSelectedInvoice(f)}
-                      className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1"
-                      style={{
-                        background: "#4338CA",
-                        color: "#FFFFFF",
-                      }}
-                    >
-                      📄 Télécharger PDF
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {f.status !== "payee" && (
+                        <button
+                          onClick={() => handlePayStripe(f)}
+                          disabled={payingInvoiceId === f.id}
+                          className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1 text-white"
+                          style={{
+                            background: "#059669",
+                          }}
+                        >
+                          {payingInvoiceId === f.id ? "Connexion..." : "💳 Payer"}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => setSelectedInvoice(f)}
+                        className="text-xs px-3 py-1.5 rounded-lg transition-colors font-medium flex items-center gap-1"
+                        style={{
+                          background: "#4338CA",
+                          color: "#FFFFFF",
+                        }}
+                      >
+                        📄 PDF
+                      </button>
+                    </div>
                   </td>
                 </tr>
               );
@@ -243,7 +325,7 @@ export default function Facturation() {
           <div className="flex flex-col items-center max-h-screen my-4">
             <div className="w-full max-w-[210mm] flex items-center justify-between pb-3 text-white">
               <h3 className="font-bold text-base">
-                📄 Facture Format A4 : {selectedInvoice.id}
+                📄 Facture Format A4 : {selectedInvoice.invoiceNumber}
               </h3>
               <div className="flex items-center gap-2">
                 <button
@@ -277,7 +359,7 @@ export default function Facturation() {
                   </div>
                   <div className="text-right">
                     <span className="text-2xl font-extrabold text-indigo-900 tracking-wider">FACTURE</span>
-                    <p className="font-mono text-sm font-bold text-slate-800 mt-1">{selectedInvoice.id}</p>
+                    <p className="font-mono text-sm font-bold text-slate-800 mt-1">{selectedInvoice.invoiceNumber}</p>
                     <p className="text-slate-600 text-xs mt-1">Date d'émission : <strong>{selectedInvoice.date}</strong></p>
                     <p className="text-slate-600 text-xs">Date d'échéance : <strong>{selectedInvoice.echeance}</strong></p>
                   </div>
@@ -331,7 +413,7 @@ export default function Facturation() {
                     <p>Règlement par virement bancaire sous 30 jours.</p>
                     <p>IBAN : <strong>BE71 0012 3456 7890</strong></p>
                     <p>BIC : <strong>GEBABEBB</strong></p>
-                    <p>Communication obligatoire : <strong>{selectedInvoice.id}</strong></p>
+                    <p>Communication obligatoire : <strong>{selectedInvoice.invoiceNumber}</strong></p>
                   </div>
 
                   <div className="w-64 space-y-2 text-right">

@@ -95,4 +95,18 @@ export const apiService = {
         const response = await fetch(`${API_BASE_URL}/invoices`);
         return handleResponse<any[]>(response);
     },
+
+    async createStripeCheckoutSession(invoiceId: string, amount?: number): Promise<{ url: string; sessionId: string }> {
+        const response = await fetch(`${API_BASE_URL}/payments/create-checkout-session`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ invoiceId, amount }),
+        });
+        return handleResponse<{ url: string; sessionId: string }>(response);
+    },
+
+    async verifyStripePayment(sessionId: string): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/payments/verify/${sessionId}`);
+        return handleResponse<any>(response);
+    },
 };
