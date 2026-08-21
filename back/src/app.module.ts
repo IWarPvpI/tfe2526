@@ -9,10 +9,12 @@ import { InvoicesModule } from './invoices/invoices.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AuditLogsModule } from './audit-logs/audit-logs.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     DatabaseRootModule, 
+    AuthModule,
     RequestsModule, 
     UsersModule, 
     EnterprisesModule, 

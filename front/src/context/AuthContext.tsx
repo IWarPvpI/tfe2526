@@ -1,24 +1,24 @@
 import { createContext, useContext, useState } from "react";
 
-export type Role = "client" | "employee" | "admin" | "superadmin";
+export type Role = "user" | "admin" ;
 
 export interface User {
   id: string;
   name: string;
   email: string;
   role: Role;
-  permissions: string[]; // ex: ["canEditDelivery:123", "canEditDelivery:456"]
+  permissions: string[];
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (user: User) => void;
+  login: (user: User, token?: string) => void;
   logout: () => void;
   hasPermission: (permission: string) => boolean;
   isAtLeast: (role: Role) => boolean;
 }
 
-const ROLE_HIERARCHY: Role[] = ["client", "employee", "admin", "superadmin"];
+const ROLE_HIERARCHY: Role[] = ["user", "admin"];
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
@@ -29,16 +29,35 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(() => {
+    const saved = localStorage.getItem("uniship_user");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
 
-  const login = (user: User) => setUser(user);
-  const logout = () => setUser(null);
+  const login = (user: User, token?: string) => {
+    setUser(user);
+    localStorage.setItem("uniship_user", JSON.stringify(user));
+    if (token) {
+      localStorage.setItem("access_token", token);
+    }
+  };
 
-  // Vérifie une permission granulaire (ex: "canEditDelivery:123")
+  const logout = () => {
+    setUser(null);
+    localStorage.removeItem("uniship_user");
+    localStorage.removeItem("access_token");
+  };
+
   const hasPermission = (permission: string) =>
-    user?.permissions.includes(permission) ?? false;
+    user?.permissions ? user.permissions.includes(permission) : false;
 
-  // Vérifie si le rôle de l'user est >= au rôle requis
   const isAtLeast = (role: Role) => {
     if (!user) return false;
     return ROLE_HIERARCHY.indexOf(user.role) >= ROLE_HIERARCHY.indexOf(role);
