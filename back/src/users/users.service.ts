@@ -1,10 +1,13 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UseGuards} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import * as crypto from 'crypto';
 import {Role} from "../roles/entities/role.entity";
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
+import {Roles} from "../auth/decorators/roles.decorator";
 
+@UseGuards(JwtAuthGuard)
 @Injectable()
 export class UsersService {
   constructor(
@@ -14,6 +17,7 @@ export class UsersService {
     private readonly roleRepo: Repository<Role>,
   ) {}
 
+  @Roles('admin')
   async create(data: any) {
     const passwordHash = crypto
       .createHash('sha256')

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
@@ -20,6 +20,7 @@ const NAV_ITEMS = [
 
 export default function Layout() {
   const [isOpen, setIsOpen] = useState(true);
+  const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { t } = useTranslation();
   const { user, logout } = useAuth();
@@ -102,15 +103,20 @@ export default function Layout() {
               {theme === "dark" ? "☀️" : "🌙"}
             </button>
 
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "var(--accent)", color: "#ffffff" }}>
+            <button
+              onClick={() => navigate("/profile")}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl border transition-colors cursor-pointer"
+              style={{ background: "var(--bg-app)", borderColor: "var(--border)" }}
+              title="Mon profil & mot de passe"
+            >
+              <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold" style={{ background: "var(--accent)", color: "#ffffff" }}>
                 {initials}
               </div>
 
               <span className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                 {user?.name}
               </span>
-            </div>
+            </button>
 
             <button
               onClick={logout}

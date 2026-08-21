@@ -20,4 +20,11 @@ export class AuthController {
   async getMe(@Req() req: any) {
     return this.authService.getMe(req.user.userId);
   }
+
+  @Post('change-password')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: "Changer le mot de passe de l'utilisateur connecté" })
+  async changePassword(@Req() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
+    return this.authService.changePassword(req.user.userId, body.currentPassword, body.newPassword);
+  }
 }

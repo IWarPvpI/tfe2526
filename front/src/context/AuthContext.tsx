@@ -1,6 +1,6 @@
 import { createContext, useContext, useState } from "react";
 
-export type Role = "user" | "admin" ;
+export type Role = "client" | "user" | "employee" | "admin" | "superadmin";
 
 export interface User {
   id: string;
@@ -18,7 +18,7 @@ interface AuthContextType {
   isAtLeast: (role: Role) => boolean;
 }
 
-const ROLE_HIERARCHY: Role[] = ["user", "admin"];
+const ROLE_HIERARCHY: Role[] = ["client", "user", "employee", "admin", "superadmin"];
 
 const AuthContext = createContext<AuthContextType>({
   user: null,

@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UseGuards} from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Request, RequestStatus } from './entities/request.entity';
 import { ConfirmDemandeDto } from './dto/confirm-demande.dto';
 import axios from 'axios';
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
+@UseGuards(JwtAuthGuard)
 @Injectable()
 export class RequestsService {
   private readonly logger = new Logger(RequestsService.name);

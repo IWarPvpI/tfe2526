@@ -59,4 +59,22 @@ export class AuthService {
       relations: { role: true, enterprise: true },
     });
   }
+
+  async changePassword(userId: string, currentPass: string, newPass: string) {
+    const user = await this.userRepo.findOneBy({ id: userId });
+    if (!user) {
+      throw new UnauthorizedException('Utilisateur non trouvé');
+    }
+
+    const currentHash = crypto.createHash('sha256').update(currentPass).digest('hex');
+    if (user.passwordHash !== currentHash && user.passwordHash !== currentPass) {
+      throw new UnauthorizedException("L'ancien mot de passe est incorrect");
+    }
+
+    const newHash = crypto.createHash('sha256').update(newPass).digest('hex');
+    user.passwordHash = newHash;
+    await this.userRepo.save(user);
+
+    return { success: true, message: 'Mot de passe mis à jour avec succès' };
+  }
 }

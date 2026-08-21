@@ -20,7 +20,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
         let errorData: ApiError;
         try {
             errorData = await response.json();
-        } catch (e) {
+        } catch {
             errorData = { message: `Erreur ${response.status}: ${response.statusText}` };
         }
         throw errorData;
@@ -41,6 +41,15 @@ export const apiService = {
     async getMe(): Promise<any> {
         const response = await fetch(`${API_BASE_URL}/auth/me`, {
             headers: getAuthHeaders(),
+        });
+        return handleResponse<any>(response);
+    },
+
+    async changePassword(passwords: { currentPassword: string; newPassword: string }): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: getAuthHeaders(),
+            body: JSON.stringify(passwords),
         });
         return handleResponse<any>(response);
     },

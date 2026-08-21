@@ -1,4 +1,4 @@
-import { useState } from "react";
+import {useEffect, useState} from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api.service";
@@ -23,15 +23,6 @@ export interface ClientMock {
   recentShipments?: Array<{ id: string; date: string; destination: string; status: string; total: number }>;
 }
 
-export const MOCK_CLIENTS: ClientMock[] = [
-  { id: "CLT-001", nom: "Dupont SA",       type: "SA",          email: "contact@dupont.be",   tel: "+32 2 123 45 67", ville: "Bruxelles", pays: "BE", since: "2021-03", expeditions: 48, ca: 28400, actif: true  },
-  { id: "CLT-002", nom: "Leroy SPRL",      type: "SPRL",        email: "info@leroy.be",        tel: "+32 9 234 56 78", ville: "Gand",      pays: "BE", since: "2022-01", expeditions: 23, ca: 14200, actif: true  },
-  { id: "CLT-003", nom: "Martin & Co",     type: "Indépendant", email: "martin@martinco.be",   tel: "+32 4 345 67 89", ville: "Liège",     pays: "BE", since: "2023-06", expeditions: 12, ca: 6800,  actif: true  },
-  { id: "CLT-004", nom: "Verbeke NV",      type: "NV",          email: "logistics@verbeke.be", tel: "+32 3 456 78 90", ville: "Anvers",    pays: "BE", since: "2020-11", expeditions: 87, ca: 52100, actif: true  },
-  { id: "CLT-005", nom: "Duchêne SCS",     type: "SCS",         email: "admin@duchene.be",     tel: "+32 81 567 89 01",ville: "Namur",     pays: "BE", since: "2022-08", expeditions: 9,  ca: 3200,  actif: false },
-  { id: "CLT-006", nom: "Claes Import",    type: "SA",          email: "import@claes.be",      tel: "+32 2 678 90 12", ville: "Bruxelles", pays: "BE", since: "2021-05", expeditions: 34, ca: 31600, actif: true  },
-  { id: "CLT-007", nom: "Peeters Logics",  type: "NV",          email: "ops@peeters.be",       tel: "+32 50 789 01 23",ville: "Bruges",    pays: "BE", since: "2023-01", expeditions: 18, ca: 11400, actif: true  },
-];
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
@@ -47,7 +38,7 @@ export default function Clients() {
   const [search, setSearch] = useState("");
   const [filterActif, setFilterActif] = useState<"" | "true" | "false">("");
   const [showModal, setShowModal] = useState(false);
-  const [clientsList, setClientsList] = useState<ClientMock[]>(MOCK_CLIENTS);
+  const [clientsList, setClientsList] = useState<ClientMock[]>([]);
 
   const [newClient, setNewClient] = useState({
     nom: "",
@@ -67,10 +58,10 @@ export default function Clients() {
       id: `CLT-00${clientsList.length + 1}`,
       nom: newClient.nom,
       type: newClient.type,
-      email: newClient.email || `contact@${newClient.nom.toLowerCase().replace(/[^a-z0-9]/g, '')}.be`,
-      tel: newClient.tel || "+32 2 000 00 00",
-      ville: newClient.ville || "Bruxelles",
-      pays: newClient.pays || "BE",
+      email: newClient.email,
+      tel: newClient.tel,
+      ville: newClient.ville,
+      pays: newClient.pays,
       since: new Date().toISOString().slice(0, 7),
       expeditions: 0,
       ca: 0,
@@ -89,13 +80,25 @@ export default function Clients() {
         vatNumber: created.tva,
       });
     } catch (err) {
-      // Ignorer l'erreur réseau si le serveur backend est déconnecté
     }
 
     setClientsList([created, ...clientsList]);
     setShowModal(false);
     setNewClient({ nom: "", type: "SA", email: "", tel: "", ville: "", pays: "Belgique", tva: "" });
   };
+
+  const fetchClient = async () => {
+    try {
+      const data = await apiService.getEnterprises();
+      setClientsList(data);
+    } catch (e) {
+
+    }
+  }
+
+  useEffect(() => {
+    fetchClient();
+  }, []);
 
   const data = clientsList
     .filter((c) => filterActif !== "" ? String(c.actif) === filterActif : true)

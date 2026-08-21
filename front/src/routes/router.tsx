@@ -10,6 +10,7 @@ import Clients      from "../pages/Client";
 import ClientDetail  from "../pages/ClientDetail";
 import Users         from "../pages/Users";
 import Settings     from "../pages/Settings";
+import Profile      from "../pages/Profile";
 import Login        from "../pages/Login";
 import Unauthorized from "../pages/Unauthorized";
 import TestPage from "../pages/TestPage";
@@ -35,6 +36,7 @@ export default function Router() {
           {/* Accessible à tous les rôles connectés */}
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
+          <Route path="profile" element={<Profile />} />
 
           {/* Client + tous les rôles supérieurs */}
           <Route path="expeditions" element={<Expeditions />} />
@@ -62,7 +64,7 @@ export default function Router() {
           <Route
             path="clients"
             element={
-              <ProtectedRoute minRole="employee">
+              <ProtectedRoute minRole="client">
                 <Clients />
               </ProtectedRoute>
             }
@@ -70,7 +72,7 @@ export default function Router() {
           <Route
             path="clients/:id"
             element={
-              <ProtectedRoute minRole="employee">
+              <ProtectedRoute minRole="client">
                 <ClientDetail />
               </ProtectedRoute>
             }

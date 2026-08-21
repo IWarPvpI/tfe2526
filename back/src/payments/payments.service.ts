@@ -1,10 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, UseGuards} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Payment } from './entities/payment.entity';
 import { Invoice } from '../invoices/entities/invoice.entity';
 import axios from 'axios';
+import {JwtAuthGuard} from "../auth/guards/jwt-auth.guard";
 
+@UseGuards(JwtAuthGuard)
 @Injectable()
 export class PaymentsService {
   private readonly logger = new Logger(PaymentsService.name);
