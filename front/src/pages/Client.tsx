@@ -54,35 +54,20 @@ export default function Clients() {
     e.preventDefault();
     if (!newClient.nom) return;
 
-    const created: ClientMock = {
-      id: `CLT-00${clientsList.length + 1}`,
-      nom: newClient.nom,
-      type: newClient.type,
-      email: newClient.email,
-      tel: newClient.tel,
-      ville: newClient.ville,
-      pays: newClient.pays,
-      since: new Date().toISOString().slice(0, 7),
-      expeditions: 0,
-      ca: 0,
-      actif: true,
-      tva: newClient.tva,
-    };
-
     try {
       await apiService.createEnterprise({
-        name: created.nom,
-        email: created.email,
-        phone: created.tel,
-        type: created.type,
-        city: created.ville,
-        country: created.pays,
-        vatNumber: created.tva,
+        name: newClient.nom,
+        email: newClient.email,
+        phone: newClient.tel,
+        type: newClient.type,
+        city: newClient.ville,
+        country: newClient.pays,
+        vatNumber: newClient.tva,
       });
+      await fetchClient();
     } catch (err) {
     }
 
-    setClientsList([created, ...clientsList]);
     setShowModal(false);
     setNewClient({ nom: "", type: "SA", email: "", tel: "", ville: "", pays: "Belgique", tva: "" });
   };
@@ -90,11 +75,26 @@ export default function Clients() {
   const fetchClient = async () => {
     try {
       const data = await apiService.getEnterprises();
-      setClientsList(data);
+      if (Array.isArray(data)) {
+        const mapped: ClientMock[] = data.map((e: any) => ({
+          id: e.id,
+          nom: e.name,
+          type: e.type,
+          email: e.email,
+          tel: e.phone,
+          ville: e.city,
+          pays: e.country,
+          since: e.createdAt ? String(e.createdAt).slice(0, 7) : "",
+          expeditions: 0,
+          ca: 0,
+          actif: e.status !== false,
+          tva: e.vatNumber,
+        }));
+        setClientsList(mapped);
+      }
     } catch (e) {
-
     }
-  }
+  };
 
   useEffect(() => {
     fetchClient();

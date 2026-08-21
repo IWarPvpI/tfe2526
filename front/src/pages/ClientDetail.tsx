@@ -1,20 +1,61 @@
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { MOCK_CLIENTS } from "./Client";
+import { apiService } from "../services/api.service";
+import type { ClientMock } from "./Client";
 
 const fmt = (n: number) =>
   new Intl.NumberFormat("fr-BE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(n);
 
-const initials = (nom: string) =>
-  nom.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
+const initials = (nom?: string) =>
+  nom ? nom.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() : "U";
 
 const AVATAR_COLORS = ["#0C447C", "#3C3489", "#085041", "#633806", "#791F1F", "#185FA5", "#27500A"];
 
 export default function ClientDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [client, setClient] = useState<ClientMock | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const clientIndex = MOCK_CLIENTS.findIndex((c) => c.id === id);
-  const client = MOCK_CLIENTS[clientIndex];
+  useEffect(() => {
+    const fetchClientDetail = async () => {
+      if (!id) return;
+      setLoading(true);
+      try {
+        const enterprises = await apiService.getEnterprises();
+        const found = enterprises.find((e: any) => e.id === id);
+        if (found) {
+          setClient({
+            id: found.id,
+            nom: found.name,
+            type: found.type,
+            email: found.email,
+            tel: found.phone,
+            ville: found.city,
+            pays: found.country,
+            since: found.createdAt ? String(found.createdAt).slice(0, 7) : "",
+            expeditions: 0,
+            ca: 0,
+            actif: found.status !== false,
+            tva: found.vatNumber,
+            recentShipments: [],
+          });
+        }
+      } catch (e) {
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClientDetail();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="p-8 space-y-4 text-center">
+        <p className="text-sm" style={{ color: "var(--text-muted)" }}>Chargement des détails du client...</p>
+      </div>
+    );
+  }
 
   if (!client) {
     return (
@@ -32,11 +73,10 @@ export default function ClientDetail() {
     );
   }
 
-  const avatarBg = AVATAR_COLORS[clientIndex % AVATAR_COLORS.length];
+  const avatarBg = AVATAR_COLORS[0];
 
   return (
     <div className="space-y-6">
-      {/* Navigation retour */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate("/clients")}
@@ -47,7 +87,6 @@ export default function ClientDetail() {
         </button>
       </div>
 
-      {/* Carte En-Tête du Client */}
       <div
         className="p-6 rounded-2xl space-y-6 relative overflow-hidden"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
@@ -91,11 +130,10 @@ export default function ClientDetail() {
 
           <div className="text-right">
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>Numéro de TVA</p>
-            <p className="text-sm font-mono font-semibold" style={{ color: "var(--text-primary)" }}>{client.tva || "Non renseigné "}</p>
+            <p className="text-sm font-mono font-semibold" style={{ color: "var(--text-primary)" }}>{client.tva}</p>
           </div>
         </div>
 
-        {/* Coordonnées & Adresse */}
         <div
           className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4"
           style={{ borderTop: "1px solid var(--border)" }}
@@ -104,7 +142,7 @@ export default function ClientDetail() {
             <p className="text-xs font-semibold uppercase tracking-wider mb-1" style={{ color: "var(--text-muted)" }}>
               Contact Principal
             </p>
-            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{client.contactPerson || "Non renseigné "}</p>
+            <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{client.contactPerson}</p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>✉ {client.email}</p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>☎ {client.tel}</p>
           </div>
@@ -114,10 +152,10 @@ export default function ClientDetail() {
               Adresse du Siège
             </p>
             <p className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
-              {client.rue ? `${client.rue} ${client.numero || ''}` : "Rue non renseignée"}
+              {client.rue} {client.numero}
             </p>
             <p className="text-xs" style={{ color: "var(--text-muted)" }}>
-              {client.codePostal ? `${client.codePostal} ` : ''}{client.ville}, {client.pays}
+              {client.codePostal} {client.ville}, {client.pays}
             </p>
           </div>
 
@@ -126,12 +164,10 @@ export default function ClientDetail() {
               Statut Logistique
             </p>
             <p className="text-sm font-medium text-emerald-500">Compte Client Uniship</p>
-            <p className="text-xs" style={{ color: "var(--text-muted)" }}> </p>
           </div>
         </div>
       </div>
 
-      {/* KPI Financiers & Volume */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div
           className="p-5 rounded-2xl space-y-1"
@@ -160,7 +196,6 @@ export default function ClientDetail() {
         </div>
       </div>
 
-      {/* Tableau des dernières expéditions du client */}
       <div
         className="p-6 rounded-2xl space-y-4"
         style={{ background: "var(--bg-surface)", border: "1px solid var(--border)" }}
@@ -170,7 +205,7 @@ export default function ClientDetail() {
             Dernières Expéditions Client
           </h2>
           <span className="text-xs font-mono" style={{ color: "var(--text-muted)" }}>
-            {client.recentShipments?.length || 0} expédition(s) récente(s)
+            {client.recentShipments ? client.recentShipments.length : 0} expédition(s) récente(s)
           </span>
         </div>
 

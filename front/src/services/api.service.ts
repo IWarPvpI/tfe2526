@@ -93,6 +93,13 @@ export const apiService = {
         return handleResponse<any[]>(response);
     },
 
+    async getEnterprise(id: string): Promise<any> {
+        const response = await fetch(`${API_BASE_URL}/enterprises/${id}`, {
+            headers: getAuthHeaders(),
+        });
+        return handleResponse<any>(response);
+    },
+
     async createEnterprise(enterpriseData: { name: string; email?: string; phone?: string; type?: string; city?: string; country?: string; vatNumber?: string }): Promise<any> {
         const response = await fetch(`${API_BASE_URL}/enterprises`, {
             method: 'POST',
