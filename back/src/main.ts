@@ -24,3 +24,11 @@ async function bootstrap() {
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();
+
+
+//TODO
+// COMMON.CLOSE
+// AJOUT CODE PAYS
+// CONTENUE COLIS ARTICLES DOCUMENTS
+// TAILLE DIFFERENT COLIS
+// ERREUR CONFIRMATION

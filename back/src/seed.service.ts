@@ -6,8 +6,8 @@ import { Role } from './roles/entities/role.entity';
 import { Request, RequestStatus } from './requests/entities/request.entity';
 import { RequestStatusHistory } from './requests/entities/request-status-history.entity';
 import { Enterprise } from './enterprises/entities/enterprise.entity';
-import { Address } from './addresses/entities/address.entity';
-import { Contact } from './contacts/entities/contact.entity';
+// import { Address } from './addresses/entities/address.entity';
+// import { Contact } from './contacts/entities/contact.entity';
 import { Invoice } from './invoices/entities/invoice.entity';
 import { Payment } from './payments/entities/payment.entity';
 import { AuditLog } from './audit-logs/entities/audit-log.entity';
@@ -21,8 +21,8 @@ export class SeedService implements OnModuleInit {
         @InjectRepository(Role) private roleRepo: Repository<Role>,
         @InjectRepository(User) private userRepo: Repository<User>,
         @InjectRepository(Enterprise) private enterpriseRepo: Repository<Enterprise>,
-        @InjectRepository(Address) private addressRepo: Repository<Address>,
-        @InjectRepository(Contact) private contactRepo: Repository<Contact>,
+        // @InjectRepository(Address) private addressRepo: Repository<Address>,
+        // @InjectRepository(Contact) private contactRepo: Repository<Contact>,
         @InjectRepository(Request) private requestRepo: Repository<Request>,
         @InjectRepository(RequestStatusHistory) private historyRepo: Repository<RequestStatusHistory>,
         @InjectRepository(Invoice) private invoiceRepo: Repository<Invoice>,
@@ -39,11 +39,9 @@ export class SeedService implements OnModuleInit {
         this.logger.log('🌱 Starting full DBZ database seeding...');
         
         try {
-            // 1. Roles
             const adminRole = await this.roleRepo.save({ name: 'admin' });
             const userRole = await this.roleRepo.save({ name: 'user' });
 
-            // 2. Enterprises
             const capsuleCorp = await this.enterpriseRepo.save({ 
                 name: 'Capsule Corp', 
                 vatNumber: 'BE0123456789', 
@@ -57,7 +55,6 @@ export class SeedService implements OnModuleInit {
                 contract: { discount: '2%', priority: 'Low' }
             });
 
-            // 3. Users
             const goku = await this.userRepo.save({ 
                 email: 'goku@saiyan.com', passwordHash: 'hash', firstName: 'Goku', lastName: 'Kakarot', phone: '123', role: adminRole, enterprise: capsuleCorp 
             });
@@ -69,22 +66,6 @@ export class SeedService implements OnModuleInit {
             });
             const freezer = await this.userRepo.save({ 
                 email: 'freezer@space.com', passwordHash: 'hash', firstName: 'Freezer', lastName: 'Emperor', phone: '000', role: userRole, enterprise: redRibbon 
-            });
-
-            // 4. Addresses
-            const addr1 = await this.addressRepo.save({ 
-                label: 'Sede Capsule Corp', contactFirstName: 'Bulma', contactLastName: 'Brief', street: 'West City Ave', number: '1', zipCode: '1000', city: 'Bruxelles', countryCode: 'BE', user: goku 
-            });
-            const addr2 = await this.addressRepo.save({ 
-                label: 'Montagne Korin', contactFirstName: 'Korin', contactLastName: 'Cat', street: 'Sky Mt', number: '1', zipCode: '3000', city: 'Bruxelles', countryCode: 'BE', user: krillin 
-            });
-
-            // 5. Contacts
-            await this.contactRepo.save({ 
-                firstName: 'Bulma', lastName: 'Brief', email: 'bulma@capsule.com', phone: '111', roleInCompany: 'CEO', enterprise: capsuleCorp 
-            });
-            await this.contactRepo.save({ 
-                firstName: 'Commander', lastName: 'Red', email: 'red@ribbon.com', phone: '222', roleInCompany: 'General', enterprise: redRibbon 
             });
 
             // 6. Requests

@@ -1,16 +1,9 @@
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../../context/AuthContext";
 import { useDemandeForm } from "../../hooks/useDemandeForm";
+import { apiService } from "../../services/api.service";
 import type { ApiError } from "../../types/api.types";
-
-interface Adresse {
-    rue: string;
-    numero: string;
-    bte: string;
-    codePostal: string;
-    pays: string;
-}
 
 interface DemandeFormProps {
     onClose?: () => void;
@@ -27,21 +20,27 @@ const LISTE_PAYS_MONDE = Object.entries(isoObj)
     .map(([code, name]) => ({ code, name }))
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 
-const LISTE_CLIENTS = ["Dupont SA", "Durand Logistique", "Janssen Pharmaceutica", "Colruyt Group"];
-
-const ADRESSES_CLIENTS: Record<string, Adresse[]> = {
-    "Dupont SA": [
-        { rue: "Rue du Progrès", numero: "10", bte: "A", codePostal: "1000", pays: "Belgique" },
-        { rue: "Antwerpsesteenweg", numero: "45", bte: "", codePostal: "2000", pays: "Belgique" },
-    ],
-};
-
 export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
     const { t } = useTranslation();
     const { user } = useAuth();
     const isClient = user?.role === "client";
 
-    const { state, actions, utils } = useDemandeForm(user?.role, "Dupont SA");
+    const [enterprises, setEnterprises] = useState<any[]>([]);
+
+    useEffect(() => {
+        const loadEnterprises = async () => {
+            try {
+                const data = await apiService.getEnterprises();
+                if (Array.isArray(data)) {
+                    setEnterprises(data);
+                }
+            } catch {
+            }
+        };
+        loadEnterprises();
+    }, []);
+
+    const { state, actions, utils } = useDemandeForm(user?.role, user?.name ? user.name : "");
     const { client, date, livraisonDate, poids, origine, destination, adressesDisponibles, step, rates, loading, selectedOption, origineError, destinationError } = state;
 
     const aujourdhui = new Date();
@@ -50,12 +49,8 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
     const demainStr = demainObj.toISOString().split("T")[0];
 
     useEffect(() => {
-        if (client && ADRESSES_CLIENTS[client]) {
-            actions.setAdressesDisponibles(ADRESSES_CLIENTS[client]);
-        } else {
-            actions.setAdressesDisponibles([]);
-        }
-    }, [client, actions.setAdressesDisponibles]);
+        actions.setAdressesDisponibles([]);
+    }, [actions.setAdressesDisponibles]);
 
     const handleFetchRates = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -151,7 +146,7 @@ export default function DemandeForm({ onClose, onSubmit }: DemandeFormProps) {
                             style={{ color: "var(--text-primary)" }}
                         />
                         <datalist id="clients-list">
-                            {LISTE_CLIENTS.map((nom, idx) => <option key={idx} value={nom} />)}
+                            {enterprises.map((ent: any) => <option key={ent.id} value={ent.name} />)}
                         </datalist>
                     </div>
                 )}

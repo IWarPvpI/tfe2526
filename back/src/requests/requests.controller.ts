@@ -1,7 +1,8 @@
-import { Controller, Get, Post, Body, Param, Delete, Patch, Query } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Post, Body, Param, UseGuards, Req } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { RequestsService } from './requests.service';
 import { ConfirmDemandeDto } from './dto/confirm-demande.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 
 @ApiTags('Requests')
 @Controller('requests')
@@ -27,8 +28,12 @@ export class RequestsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: 'Lister toutes les demandes et expéditions' })
-  async findAll() {
+  async findAll(@Req() req: any) {
+    if (req.user && (req.user.role === 'client' || req.user.role === 'user')) {
+      return this.requestsService.findByUser(req.user.userId);
+    }
     return this.requestsService.findAll();
   }
 

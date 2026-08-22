@@ -1,7 +1,8 @@
-    import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "../context/AuthContext";
 import DemandeForm from "../components/Form/DemandeForm";
+import { apiService } from "../services/api.service";
 
 type Status = "en_attente" | "approuvee" | "en_cours" | "livree" | "annulee";
 
@@ -15,11 +16,6 @@ interface Demande {
     status: Status;
 }
 
-const INITIAL_MOCK: Demande[] = [
-    { id: "DEM-001", client: "Dupont SA", origine: "Bruxelles", destination: "Paris", date: "2024-05-01", poids: "120 kg", status: "en_attente" },
-    { id: "DEM-002", client: "Leroy SPRL", origine: "Gand", destination: "Amsterdam", date: "2024-05-03", poids: "340 kg", status: "approuvee" },
-];
-
 const STATUS_STYLE: Record<Status, { label: string; bg: string; color: string }> = {
     en_attente: { label: "demandes.status.pending", bg: "#FAEEDA", color: "#633806" },
     approuvee: { label: "demandes.status.approved", bg: "#EAF3DE", color: "#27500A" },
@@ -29,19 +25,78 @@ const STATUS_STYLE: Record<Status, { label: string; bg: string; color: string }>
 };
 
 export default function Demandes() {
-    const { user, isAtLeast } = useAuth();
+    const { isAtLeast } = useAuth();
     const { t } = useTranslation();
     
-    const [requests, setRequests] = useState<Demande[]>(INITIAL_MOCK);
+    const [requests, setRequests] = useState<Demande[]>([]);
     const [search, setSearch] = useState("");
     const [filterStatus, setFilterStatus] = useState<Status | "">("");
     const [isFormVisible, setIsFormVisible] = useState(false);
 
+    const fetchDemandes = async () => {
+        try {
+            const data = await apiService.getExpeditions();
+            if (Array.isArray(data)) {
+                const mapped: Demande[] = data.map((r: any) => {
+                    const clientName = r.user?.enterprise?.name
+                        ? r.user.enterprise.name
+                        : r.user?.firstName
+                        ? `${r.user.firstName} ${r.user.lastName}`
+                        : r.shippingDetails?.client
+                        ? r.shippingDetails.client
+                        : "Client";
+
+                    const origineCity = r.shippingDetails?.origine?.city
+                        ? r.shippingDetails.origine.city
+                        : r.shippingDetails?.origine?.street
+                        ? r.shippingDetails.origine.street
+                        : "Origine";
+
+                    const destCity = r.shippingDetails?.destination?.city
+                        ? r.shippingDetails.destination.city
+                        : r.shippingDetails?.destination?.street
+                        ? r.shippingDetails.destination.street
+                        : "Destination";
+
+                    const dateStr = r.shippingDetails?.date
+                        ? r.shippingDetails.date
+                        : r.createdAt
+                        ? String(r.createdAt).slice(0, 10)
+                        : "";
+
+                    const poidsStr = r.shippingDetails?.poids
+                        ? `${r.shippingDetails.poids} kg`
+                        : "-";
+
+                    let statusVal: Status = "en_attente";
+                    if (r.status === "CONFIRMED") statusVal = "approuvee";
+                    else if (r.status === "IN_TRANSIT") statusVal = "en_cours";
+                    else if (r.status === "DELIVERED") statusVal = "livree";
+                    else if (r.status === "CANCELLED") statusVal = "annulee";
+
+                    return {
+                        id: r.id ? `DEM-${r.id.slice(0, 8).toUpperCase()}` : "DEM-000",
+                        client: clientName,
+                        origine: origineCity,
+                        destination: destCity,
+                        date: dateStr,
+                        poids: poidsStr,
+                        status: statusVal,
+                    };
+                });
+                setRequests(mapped);
+            }
+        } catch {
+        }
+    };
+
+    useEffect(() => {
+        fetchDemandes();
+    }, []);
+
     const filteredData = useMemo(() => {
         const normalizedSearch = search.toLowerCase().trim();
         return requests.filter((d) => {
-            const matchesClient = user?.role === "client" ? d.client === "Dupont SA" : true;
-            if (!matchesClient) return false;
             const matchesStatus = filterStatus ? d.status === filterStatus : true;
             if (!matchesStatus) return false;
             if (normalizedSearch) {
@@ -54,21 +109,10 @@ export default function Demandes() {
             }
             return true;
         });
-    }, [search, filterStatus, user, requests]);
+    }, [search, filterStatus, requests]);
 
-    const handleCreateDemande = (formData: any) => {
-        const newId = `DEM-${String(requests.length + 1).padStart(3, "0")}`;
-        const createdItem: Demande = {
-            id: newId,
-            client: formData.client,
-            origine: formData.origine.rue,
-            destination: formData.destination.rue,
-            date: formData.date,
-            poids: `${formData.poids} kg`,
-            status: "en_attente",
-        };
-
-        setRequests([createdItem, ...requests]);
+    const handleCreateDemande = async () => {
+        await fetchDemandes();
         setIsFormVisible(false);
     };
 
@@ -80,7 +124,7 @@ export default function Demandes() {
                 </h2>
                 <button
                     onClick={() => setIsFormVisible(!isFormVisible)}
-                    className="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-90 active:scale-95"
+                    className="px-4 py-2 rounded-xl text-sm font-medium transition-all hover:opacity-90 active:scale-95 cursor-pointer"
                     style={{ background: "var(--accent)", color: "#fff" }}
                 >
                     {isFormVisible ? t("common.close") : t("demandes.new_request")}

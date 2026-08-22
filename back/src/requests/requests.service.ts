@@ -28,6 +28,7 @@ export class RequestsService {
   async create(demandeData: any) {
     try {
       this.logger.log(`--- Nouvelle Demande de Tarifs ---`);
+      this.logger.log(demandeData)
       const token = await this.getAccessToken();
       const fedexPayload = this.mapToFedexFormat(demandeData);
 
@@ -42,7 +43,8 @@ export class RequestsService {
           },
         },
       );
-
+      this.logger.log(`--- Nouvelle Demande de response ---`);
+      this.logger.log(response)
       return this.simplifyFedexResponse(response.data);
     } catch (error) {
       this.logger.error(
@@ -257,6 +259,20 @@ export class RequestsService {
     });
   }
 
+  async findByUser(userId: string) {
+    return this.requestRepo.find({
+      where: [
+        { user: { id: userId } },
+        { createdBy: { id: userId } },
+      ],
+      order: { createdAt: 'DESC' },
+      relations: {
+        user: true,
+        createdBy: true,
+      },
+    });
+  }
+
   async findOne(id: string) {
     return this.requestRepo.findOne({
       where: { id },
@@ -395,12 +411,12 @@ export class RequestsService {
       return {
         serviceType: detail.serviceType,
         serviceName: detail.serviceName,
-        totalNetCharge: ratedDetail.totalNetCharge || 0,
-        currency: ratedDetail.currency || 'USD',
+        totalNetCharge: ratedDetail.totalNetCharge,
+        currency: ratedDetail.currency,
       };
     });
     return {
-      transactionId: data.transactionId || 'N/A',
+      transactionId: data.transactionId,
       options,
       quoteDate: output.quoteDate || new Date().toISOString(),
     };
