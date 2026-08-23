@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Invoice } from '../../invoices/entities/invoice.entity';
 
 @Entity('payments')
@@ -24,4 +24,7 @@ export class Payment {
 
   @CreateDateColumn()
   createdAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
 }

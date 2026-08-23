@@ -11,6 +11,7 @@ import ClientDetail  from "../pages/ClientDetail";
 import Users         from "../pages/Users";
 import Settings     from "../pages/Settings";
 import Profile      from "../pages/Profile";
+import Legal        from "../pages/Legal";
 import Login        from "../pages/Login";
 import Unauthorized from "../pages/Unauthorized";
 import TestPage from "../pages/TestPage";
@@ -22,6 +23,7 @@ export default function Router() {
 
         {/* Public */}
         <Route path="/login"        element={<Login />} />
+        <Route path="/legal"        element={<Legal />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
 
         {/* Protégé — toutes les pages partagent le même Layout */}
@@ -37,6 +39,7 @@ export default function Router() {
           <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
+          <Route path="legal" element={<Legal />} />
 
           {/* Client + tous les rôles supérieurs */}
           <Route path="expeditions" element={<Expeditions />} />

@@ -60,7 +60,7 @@ export default function Layout() {
         </div>
 
         {/* NAV */}
-        <nav className="flex flex-col gap-1.5 p-2 mt-2">
+        <nav className="flex flex-col gap-1.5 p-2 mt-2 flex-1">
           {NAV_ITEMS.map((item) => (
             <NavLink
               key={item.key}
@@ -85,6 +85,28 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="p-2 border-t" style={{ borderColor: "var(--border)" }}>
+          <NavLink
+            to="/legal"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-3 py-2 rounded-xl transition-colors text-xs font-medium ${
+                isActive
+                  ? "bg-[var(--bg-hover)] text-[var(--accent)] font-semibold"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-hover)]"
+              }`
+            }
+          >
+            <span className="text-sm w-6 text-center">⚖️</span>
+            <motion.span
+              animate={{ opacity: isOpen ? 1 : 0, width: isOpen ? "auto" : 0 }}
+              transition={{ duration: 0.15 }}
+              className="overflow-hidden whitespace-nowrap"
+            >
+              Mentions Légales & CGU
+            </motion.span>
+          </NavLink>
+        </div>
       </motion.aside>
 
       {/* MAIN */}

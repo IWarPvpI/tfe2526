@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, ManyToOne, JoinColumn } from 'typeorm';
 import { Request } from '../../requests/entities/request.entity';
 import { User } from '../../users/entities/user.entity';
 
@@ -19,7 +19,7 @@ export class Invoice {
   invoiceNumber: string;
 
   @Column()
-  type: string; // facture, avoir
+  type: string;
 
   @Column('float')
   amountExclVat: number;
@@ -47,4 +47,7 @@ export class Invoice {
 
   @Column({ nullable: true })
   paidAt: Date;
+
+  @DeleteDateColumn({ nullable: true })
+  deletedAt: Date;
 }

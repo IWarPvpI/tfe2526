@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiService } from "../services/api.service";
 import UnishipLogo from "../components/ui/UnishipLogo";
@@ -130,6 +130,16 @@ export default function Login() {
               </button>
             ))}
           </div>
+        </div>
+
+        <div className="text-center pt-2">
+          <Link
+            to="/legal"
+            className="text-xs hover:underline transition-colors"
+            style={{ color: "var(--text-muted)" }}
+          >
+            ⚖️ Mentions Légales, RGPD & CGU
+          </Link>
         </div>
       </div>
     </div>
